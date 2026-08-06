@@ -34,34 +34,28 @@ class QRCodeDisplay extends Component
 
     public function decrementCountdown()
     {
-        // Paksakan refresh sesi dari database setiap kali poll terjadi
-        $this->session->refresh();
-
-        // Gunakan timestamp (angka murni) untuk menghindari masalah timezone
-        $now = now('Asia/Jakarta')->timestamp;
-        $expiresAt = \Illuminate\Support\Carbon::parse($this->session->expires_at, 'Asia/Jakarta')->timestamp;
-
-        $diff = $expiresAt - $now;
-
-        if ($diff > 0) {
-            $this->countdown = (int) $diff;
-        } else {
-            $this->countdown = 0;
+        // Kurangi angka di layar secara mandiri
+        if ($this->countdown > 0) {
+            $this->countdown--;
         }
 
-        // Jika token di layar berbeda dengan di database, generate QR ulang
-        if ($this->session->current_token !== $this->token) {
-            $this->token = $this->session->current_token;
-            $this->expiredAt = $this->session->expires_at->toDateTimeString();
-            $this->generateQRCode(app(QRCodeService::class));
+        // Cek ke database setiap kali countdown mencapai 0
+        if ($this->countdown <= 0) {
+            $this->session->refresh();
+
+            if ($this->session->current_token !== $this->token) {
+                $this->token = $this->session->current_token;
+                $this->expiredAt = $this->session->expires_at->toDateTimeString();
+                $this->countdown = 10; // Reset ke 10 detik jika ada token baru
+                $this->generateQRCode(app(QRCodeService::class));
+            } else {
+                $this->countdown = 0;
+            }
         }
     }
 
     public function render()
     {
-        // Panggil decrement setiap kali render dipicu oleh wire:poll
-        $this->decrementCountdown();
-
         return view('livewire.attendance.q-r-code-display');
     }
 }

@@ -1,4 +1,4 @@
-<div class="flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-md" wire:poll.3s>
+<div class="flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-md" wire:poll.1s="decrementCountdown">
     <div class="mb-4 text-2xl font-bold text-gray-800">
         {{ $session->session_name }}
     </div>

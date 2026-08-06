@@ -23,23 +23,6 @@ class QRCodeDisplay extends Component
         $this->generateQRCode($qrCodeService);
     }
 
-    public function getListeners()
-    {
-        return [
-            "echo-private:attendance-session.{$this->session->id},.token.updated" => 'onTokenUpdated',
-        ];
-    }
-
-    public function onTokenUpdated($data)
-    {
-        $this->token = $data['token'];
-        $this->expiredAt = $data['expired_at'];
-        $this->countdown = $data['countdown'];
-
-        $qrCodeService = app(QRCodeService::class);
-        $this->generateQRCode($qrCodeService);
-    }
-
     public function generateQRCode(QRCodeService $qrCodeService)
     {
         $this->qrCode = $qrCodeService->generate(

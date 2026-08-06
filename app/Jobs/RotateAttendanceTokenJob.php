@@ -30,10 +30,10 @@ class RotateAttendanceTokenJob implements ShouldQueue
         }
 
         // Check if session has been active for more than 2 hours
-        if ($session->started_at && $session->started_at->diffInHours(now()) >= 2) {
+        if ($session->started_at && $session->started_at->diffInHours(now('Asia/Jakarta')) >= 2) {
             $session->update([
                 'status' => 'inactive',
-                'ended_at' => now(),
+                'ended_at' => now('Asia/Jakarta'),
             ]);
 
             // You might want to broadcast a 'session.closed' event here if needed

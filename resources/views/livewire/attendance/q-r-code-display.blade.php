@@ -13,7 +13,7 @@
             {{ $countdown }}s
         </div>
         <div class="text-[10px] text-gray-300 mt-2">
-            Last Sync: {{ now()->format('H:i:s') }}
+            Last Sync: {{ now('Asia/Jakarta')->format('H:i:s') }} (WIB)
         </div>
     </div>
 

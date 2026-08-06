@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Database Magang - Struktur Tabel & Relasi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 40px;
+        }
+        caption {
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .fk {
+            color: #0a58ca;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Struktur Database Sistem Magang</h2>
+
+<!-- USER -->
+<table>
+    <caption>User</caption>
+    <tr><th>Field</th><th>Tipe Data</th><th>Keterangan</th></tr>
+    <tr><td>id</td><td>int</td><td>Primary Key</td></tr>
+    <tr><td>name</td><td>string</td><td>Nama user</td></tr>
+    <tr><td>email</td><td>string</td><td>Email</td></tr>
+    <tr><td>password</td><td>string</td><td>Password</td></tr>
+    <tr><td>role</td><td>string</td><td>admin / mahasiswa / pembimbing</td></tr>
+    <tr><td>phone</td><td>string</td><td>No HP</td></tr>
+    <tr><td>is_active</td><td>boolean</td><td>Status akun</td></tr>
+    <tr><td>email_verified_at</td><td>datetime</td><td>Verifikasi email</td></tr>
+</table>
+
+<!-- MAHASISWA -->
+<table>
+    <caption>Mahasiswa</caption>
+    <tr><th>Field</th><th>Tipe Data</th><th>Keterangan</th></tr>
+    <tr><td>id</td><td>int</td><td>Primary Key</td></tr>
+    <tr><td class="fk">user_id</td><td>int</td><td>FK → user.id</td></tr>
+    <tr><td>nim</td><td>string</td><td>NIM</td></tr>
+    <tr><td>universitas</td><td>string</td><td>Universitas</td></tr>
+    <tr><td>fakultas</td><td>string</td><td>Fakultas</td></tr>
+    <tr><td>jurusan</td><td>string</td><td>Jurusan</td></tr>
+    <tr><td>semester</td><td>int</td><td>Semester</td></tr>
+    <tr><td>ipk</td><td>decimal</td><td>IPK</td></tr>
+    <tr><td>alamat</td><td>string</td><td>Alamat</td></tr>
+    <tr><td>tanggal_lahir</td><td>date</td><td>Tanggal lahir</td></tr>
+    <tr><td>jenis_kelamin</td><td>string</td><td>L/P</td></tr>
+    <tr><td>profile_photo_path</td><td>string</td><td>Foto</td></tr>
+    <tr><td>nomor_hp</td><td>string</td><td>No HP</td></tr>
+</table>
+
+<!-- PEMBIMBING -->
+<table>
+    <caption>Pembimbing</caption>
+    <tr><th>Field</th><th>Tipe Data</th><th>Keterangan</th></tr>
+    <tr><td>id</td><td>int</td><td>Primary Key</td></tr>
+    <tr><td class="fk">user_id</td><td>int</td><td>FK → user.id</td></tr>
+    <tr><td>nip</td><td>string</td><td>NIP</td></tr>
+    <tr><td>jabatan</td><td>string</td><td>Jabatan</td></tr>
+    <tr><td>bidang_keahlian</td><td>string</td><td>Keahlian</td></tr>
+</table>
+
+<!-- PENGAJUAN MAGANG -->
+<table>
+    <caption>PengajuanMagang</caption>
+    <tr><th>Field</th><th>Tipe Data</th><th>Keterangan</th></tr>
+    <tr><td>id</td><td>int</td><td>Primary Key</td></tr>
+    <tr><td class="fk">mahasiswa_id</td><td>int</td><td>FK → mahasiswa.id</td></tr>
+    <tr><td class="fk">pembimbing_id</td><td>int</td><td>FK → pembimbing.id</td></tr>
+    <tr><td>surat_permohonan</td><td>string</td><td>File</td></tr>
+    <tr><td>ktm</td><td>string</td><td>File</td></tr>
+    <tr><td>tanggal_mulai</td><td>date</td><td>Mulai</td></tr>
+    <tr><td>tanggal_selesai</td><td>date</td><td>Selesai</td></tr>
+    <tr><td>durasi_magang</td><td>int</td><td>Hari</td></tr>
+    <tr><td>bidang_diminati</td><td>string</td><td>Bidang</td></tr>
+    <tr><td>status</td><td>string</td><td>Pending / Disetujui / Ditolak</td></tr>
+    <tr><td>alasan_penolakan</td><td>string</td><td>Opsional</td></tr>
+    <tr><td>tanggal_verifikasi</td><td>datetime</td><td>Verifikasi</td></tr>
+    <tr><td class="fk">verified_by</td><td>int</td><td>FK → user.id</td></tr>
+    <tr><td>surat_balasan</td><td>string</td><td>File</td></tr>
+    <tr><td>id_card_path</td><td>string</td><td>ID Card</td></tr>
+    <tr><td>final_laporan</td><td>string</td><td>Laporan</td></tr>
+    <tr><td>sertifikat</td><td>string</td><td>Sertifikat</td></tr>
+</table>
+
+<!-- PENILAIAN -->
+<table>
+    <caption>Penilaian</caption>
+    <tr><th>Field</th><th>Tipe Data</th><th>Keterangan</th></tr>
+    <tr><td>id</td><td>int</td><td>Primary Key</td></tr>
+    <tr><td class="fk">mahasiswa_id</td><td>int</td><td>FK → mahasiswa.id</td></tr>
+    <tr><td class="fk">pembimbing_id</td><td>int</td><td>FK → pembimbing.id</td></tr>
+    <tr><td>aspek_penilaian</td><td>string</td><td>Aspek</td></tr>
+    <tr><td>nilai</td><td>decimal</td><td>Nilai</td></tr>
+    <tr><td>bobot</td><td>decimal</td><td>Bobot</td></tr>
+    <tr><td>nilai_akhir</td><td>decimal</td><td>Hasil</td></tr>
+    <tr><td>grade</td><td>string</td><td>A/B/C</td></tr>
+    <tr><td>tanggal_penilaian</td><td>datetime</td><td>Tanggal</td></tr>
+</table>
+
+<!-- RELASI -->
+<h3>Relasi Antar Tabel</h3>
+<ul>
+    <li>User 1 — 1 Mahasiswa (opsional)</li>
+    <li>User 1 — 1 Pembimbing (opsional)</li>
+    <li>Mahasiswa 1 — N PengajuanMagang</li>
+    <li>Pembimbing 1 — N PengajuanMagang</li>
+    <li>User 1 — N PengajuanMagang (verifikator)</li>
+    <li>Mahasiswa 1 — N Penilaian</li>
+    <li>Pembimbing 1 — N Penilaian</li>
+    <li>PengajuanMagang 1 — N Penilaian</li>
+</ul>
+
+</body>
+</html>

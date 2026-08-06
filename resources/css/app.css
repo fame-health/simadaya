@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.filament-custom-widget {
+    @apply space-y-8 antialiased text-gray-900 dark:text-white;
+}
+
+.custom-card {
+    @apply relative overflow-hidden bg-white dark:bg-gray-900 rounded-[2rem] border border-gray-100 dark:border-gray-800 p-6 shadow-sm transition-all duration-300;
+}
+
+.stat-icon {
+    @apply w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg transition-transform;
+}
+
+.header-container {
+    @apply relative overflow-hidden bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-8 shadow-sm;
+}

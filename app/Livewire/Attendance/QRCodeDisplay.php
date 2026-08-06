@@ -53,15 +53,22 @@ class QRCodeDisplay extends Component
     {
         if ($this->countdown > 0) {
             $this->countdown--;
-        } else {
-            // Fallback: If countdown stays at 0, check database for new token
-            // this helps if the WebSocket event was missed
+        }
+
+        // Cek ke database setiap kali countdown mendekati 0 atau habis
+        // Ini menggantikan peran Pusher karena hosting tidak support npm
+        if ($this->countdown <= 0) {
             $this->session->refresh();
+
             if ($this->session->current_token !== $this->token) {
                 $this->token = $this->session->current_token;
                 $this->expiredAt = $this->session->expires_at->toDateTimeString();
                 $this->countdown = 10;
                 $this->generateQRCode(app(QRCodeService::class));
+            } else {
+                // Jika token belum berubah (mungkin scheduler belum jalan),
+                // kita tahan di 0s sebentar sampai token baru muncul
+                $this->countdown = 0;
             }
         }
     }

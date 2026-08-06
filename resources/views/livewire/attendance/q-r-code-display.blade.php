@@ -24,14 +24,4 @@
             <span class="font-semibold">{{ $session->session_date->format('d M Y') }}</span>
         </div>
     </div>
-
-    <script>
-        document.addEventListener('livewire:initialized', () => {
-           @this.on('decrementCountdown', () => {
-               if (@this.countdown > 0) {
-                   @this.countdown--;
-               }
-           });
-        });
-    </script>
 </div>

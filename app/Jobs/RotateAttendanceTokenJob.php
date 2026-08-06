@@ -43,12 +43,13 @@ class RotateAttendanceTokenJob implements ShouldQueue
         try {
             DB::transaction(function () use ($session, $tokenGenerator) {
                 $newToken = $tokenGenerator->generate();
-                $expiresAt = now()->addSeconds(10);
+                // Paksa waktu Jakarta saat menyimpan ke database
+                $expiresAt = now('Asia/Jakarta')->addSeconds(10);
 
                 $session->update([
                     'current_token' => $newToken,
                     'expires_at' => $expiresAt,
-                    'last_rotated_at' => now(),
+                    'last_rotated_at' => now('Asia/Jakarta'),
                 ]);
 
                 broadcast(new AttendanceTokenUpdated(

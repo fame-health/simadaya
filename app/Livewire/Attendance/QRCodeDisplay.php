@@ -34,30 +34,32 @@ class QRCodeDisplay extends Component
 
     public function decrementCountdown()
     {
-        if ($this->countdown > 0) {
-            $this->countdown--;
+        // Paksakan refresh sesi dari database setiap kali poll terjadi
+        $this->session->refresh();
+
+        // Hitung selisih waktu antara sekarang dan waktu kadaluarsa token
+        $expiresAt = \Illuminate\Support\Carbon::parse($this->session->expires_at);
+        $diff = now()->diffInSeconds($expiresAt, false);
+
+        if ($diff > 0) {
+            $this->countdown = (int) $diff;
+        } else {
+            $this->countdown = 0;
         }
 
-        // Cek ke database setiap kali countdown mendekati 0 atau habis
-        // Ini menggantikan peran Pusher karena hosting tidak support npm
-        if ($this->countdown <= 0) {
-            $this->session->refresh();
-
-            if ($this->session->current_token !== $this->token) {
-                $this->token = $this->session->current_token;
-                $this->expiredAt = $this->session->expires_at->toDateTimeString();
-                $this->countdown = 10;
-                $this->generateQRCode(app(QRCodeService::class));
-            } else {
-                // Jika token belum berubah (mungkin scheduler belum jalan),
-                // kita tahan di 0s sebentar sampai token baru muncul
-                $this->countdown = 0;
-            }
+        // Jika token di layar berbeda dengan di database, generate QR ulang
+        if ($this->session->current_token !== $this->token) {
+            $this->token = $this->session->current_token;
+            $this->expiredAt = $this->session->expires_at->toDateTimeString();
+            $this->generateQRCode(app(QRCodeService::class));
         }
     }
 
     public function render()
     {
+        // Panggil decrement setiap kali render dipicu oleh wire:poll
+        $this->decrementCountdown();
+
         return view('livewire.attendance.q-r-code-display');
     }
 }

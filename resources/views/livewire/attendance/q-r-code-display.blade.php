@@ -1,4 +1,4 @@
-<div class="flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-md" wire:poll.5s>
+<div class="flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-md" wire:poll.3s>
     <div class="mb-4 text-2xl font-bold text-gray-800">
         {{ $session->session_name }}
     </div>
@@ -11,6 +11,9 @@
         <div class="text-sm text-gray-500 uppercase tracking-widest">Token Baru Dalam</div>
         <div class="text-4xl font-black text-primary-600 tabular-nums">
             {{ $countdown }}s
+        </div>
+        <div class="text-[10px] text-gray-300 mt-2">
+            Last Sync: {{ now()->format('H:i:s') }}
         </div>
     </div>
 

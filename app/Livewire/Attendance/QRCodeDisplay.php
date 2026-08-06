@@ -38,8 +38,11 @@ class QRCodeDisplay extends Component
         $this->session->refresh();
 
         // Hitung selisih waktu antara sekarang dan waktu kadaluarsa token
-        $expiresAt = \Illuminate\Support\Carbon::parse($this->session->expires_at);
-        $diff = now()->diffInSeconds($expiresAt, false);
+        // Gunakan timezone Asia/Jakarta secara eksplisit untuk perbandingan
+        $expiresAt = \Illuminate\Support\Carbon::parse($this->session->expires_at, 'Asia/Jakarta');
+        $now = now('Asia/Jakarta');
+
+        $diff = $now->diffInSeconds($expiresAt, false);
 
         if ($diff > 0) {
             $this->countdown = (int) $diff;

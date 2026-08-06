@@ -34,19 +34,19 @@ class QRCodeDisplay extends Component
 
     public function decrementCountdown()
     {
-        // Kurangi angka di layar secara mandiri
+        // 1. Selalu kurangi angka di layar
         if ($this->countdown > 0) {
             $this->countdown--;
         }
 
-        // Cek ke database setiap kali countdown mencapai 0
+        // 2. Setiap kali mencapai 0, ambil data TERBARU dari database
         if ($this->countdown <= 0) {
             $this->session->refresh();
 
             if ($this->session->current_token !== $this->token) {
                 $this->token = $this->session->current_token;
                 $this->expiredAt = $this->session->expires_at->toDateTimeString();
-                $this->countdown = 10; // Reset ke 10 detik jika ada token baru
+                $this->countdown = 10; // RESET KE 10 DETIK
                 $this->generateQRCode(app(QRCodeService::class));
             } else {
                 $this->countdown = 0;

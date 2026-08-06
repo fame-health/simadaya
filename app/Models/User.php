@@ -99,6 +99,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->is_active && ($this->role === self::ROLE_ADMIN || $this->role === self::ROLE_PEMBIMBING);
+        // Izinkan semua pengguna yang aktif (Admin, Pembimbing, dan Mahasiswa) untuk login ke dashboard
+        return $this->is_active;
     }
 }

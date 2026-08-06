@@ -37,12 +37,11 @@ class QRCodeDisplay extends Component
         // Paksakan refresh sesi dari database setiap kali poll terjadi
         $this->session->refresh();
 
-        // Hitung selisih waktu antara sekarang dan waktu kadaluarsa token
-        // Gunakan timezone Asia/Jakarta secara eksplisit untuk perbandingan
-        $expiresAt = \Illuminate\Support\Carbon::parse($this->session->expires_at, 'Asia/Jakarta');
-        $now = now('Asia/Jakarta');
+        // Gunakan timestamp (angka murni) untuk menghindari masalah timezone
+        $now = now('Asia/Jakarta')->timestamp;
+        $expiresAt = \Illuminate\Support\Carbon::parse($this->session->expires_at, 'Asia/Jakarta')->timestamp;
 
-        $diff = $now->diffInSeconds($expiresAt, false);
+        $diff = $expiresAt - $now;
 
         if ($diff > 0) {
             $this->countdown = (int) $diff;

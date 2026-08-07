@@ -28,6 +28,11 @@ class WeeklyLogbookResource extends Resource
 
     protected static ?string $label = 'Logbook Mingguan';
 
+    public static function canCreate(): bool
+    {
+        return Auth::user()?->role === 'mahasiswa';
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
         /** @var \App\Models\User $user */
@@ -232,8 +237,36 @@ class WeeklyLogbookResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('approve_selected')
+                        ->label('Setujui Laporan Terpilih')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(fn (\Illuminate\Database\Eloquent\Collection $records) => $records->each->update(['status' => 'approved']))
+                        ->visible(fn () => Auth::user()->role === 'pembimbing' || Auth::user()->role === 'admin'),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('approve_all_pending')
+                    ->label('Setujui Semua Laporan')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->action(function () {
+                        $user = Auth::user();
+                        $query = \App\Models\WeeklyLogbook::where('status', 'submitted');
+
+                        // Jika bukan admin, hanya setujui mahasiswa bimbingannya sendiri
+                        if ($user->role !== 'admin') {
+                            $query->whereHas('mahasiswa.pengajuanMagang', function ($q) use ($user) {
+                                $q->where('pembimbing_id', $user->pembimbing?->id);
+                            });
+                        }
+
+                        $query->update(['status' => 'approved']);
+                    })
+                    ->visible(fn () => Auth::user()->role === 'pembimbing' || Auth::user()->role === 'admin'),
             ]);
     }
 

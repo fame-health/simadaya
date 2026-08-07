@@ -345,22 +345,18 @@ class PenilaianResource extends Resource
             })
             ->columns([
                 Tables\Columns\TextColumn::make('mahasiswa.user.name')
-                    ->label('Mahasiswa')
+                    ->label('Nama Mahasiswa')
                     ->searchable()
                     ->sortable()
-                    ->visible($isPembimbing || $isAdmin),
-                Tables\Columns\TextColumn::make('pembimbing.user.name')
-                    ->label('Penilai')
-                    ->searchable()
-                    ->sortable()
-                    ->description(fn($record) => $record->pembimbing->nip),
-                Tables\Columns\TextColumn::make('aspek_penilaian')
-                    ->label('Kategori Penilaian')
-                    ->searchable()
                     ->weight('bold')
-                    ->tooltip('Bidang atau aspek yang dinilai oleh pembimbing'),
+                    ->description(fn($record) => $record->mahasiswa->nim),
+                Tables\Columns\TextColumn::make('pembimbing.user.name')
+                    ->label('Penilai (Pembimbing)')
+                    ->searchable()
+                    ->sortable()
+                    ->visible($isAdmin),
                 Tables\Columns\TextColumn::make('nilai')
-                    ->label('Nilai Mentah')
+                    ->label('Nilai')
                     ->sortable()
                     ->badge()
                     ->color(fn ($state): string => match (true) {
@@ -369,17 +365,6 @@ class PenilaianResource extends Resource
                         $state >= 60 => 'warning',
                         default => 'danger',
                     })
-                    ->alignCenter(),
-                Tables\Columns\TextColumn::make('bobot')
-                    ->label('Porsi (%)')
-                    ->formatStateUsing(fn ($state) => ($state * 100) . '%')
-                    ->tooltip('Persentase pengaruh terhadap nilai akhir')
-                    ->alignCenter(),
-                Tables\Columns\TextColumn::make('nilai_akhir')
-                    ->label('Skor Akhir')
-                    ->sortable()
-                    ->weight('black')
-                    ->color('primary')
                     ->alignCenter(),
                 Tables\Columns\TextColumn::make('grade')
                     ->label('Grade')
@@ -393,9 +378,14 @@ class PenilaianResource extends Resource
                     })
                     ->alignCenter(),
                 Tables\Columns\TextColumn::make('tanggal_penilaian')
-                    ->label('Waktu Penilaian')
+                    ->label('Tanggal Penilaian')
                     ->date('d M Y')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('keterangan')
+                    ->label('Catatan')
+                    ->limit(30)
+                    ->tooltip(fn ($record) => $record->keterangan)
+                    ->visible(!$isMahasiswa),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('mahasiswa')

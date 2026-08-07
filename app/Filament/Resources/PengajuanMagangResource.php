@@ -126,7 +126,7 @@ class PengajuanMagangResource extends Resource
                     ->schema([
                         Forms\Components\Select::make('mahasiswa_id')
                             ->relationship('mahasiswa', 'nim')
-                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->user->name . ' - ' . $record->nim ?? 'Tanpa Nama') // Ditambahkan untuk menampilkan Nama dan NIM
+                            ->getOptionLabelFromRecordUsing(fn ($record) => ($record->user->name ?? 'Tanpa Nama') . ' - ' . ($record->nim ?? 'NIM tidak tersedia'))
                             ->required()
                             ->searchable()
                             ->preload()
@@ -280,8 +280,8 @@ class PengajuanMagangResource extends Resource
                         PengajuanMagang::STATUS_PENDING => 'warning',
                         PengajuanMagang::STATUS_DITERIMA => 'success',
                         PengajuanMagang::STATUS_DITOLAK => 'danger',
-                        PengajuanMagang::STATUS_SELESAI => Color::Blue, // Diubah menjadi Blue agar berbeda dari DITERIMA
-                        default => 'gray', // Ditambahkan default
+                        PengajuanMagang::STATUS_SELESAI => 'info',
+                        default => 'gray',
                     })
                     ->sortable(),
                 Tables\Columns\TextColumn::make('alasan_penolakan')

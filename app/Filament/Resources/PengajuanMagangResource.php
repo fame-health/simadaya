@@ -379,4 +379,21 @@ class PengajuanMagangResource extends Resource
             'view' => Pages\ViewPengajuanMagang::route('/{record}/view'),
         ];
     }
+
+    public static function getNavigationBadge(): ?string
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (!$user) return null;
+
+        if ($user->isMahasiswa()) {
+            return (string) static::getModel()::where('mahasiswa_id', $user->mahasiswa?->id)->count();
+        }
+
+        if ($user->isPembimbing()) {
+            return (string) static::getModel()::where('pembimbing_id', $user->pembimbing?->id)->count();
+        }
+
+        return (string) static::getModel()::count();
+    }
 }

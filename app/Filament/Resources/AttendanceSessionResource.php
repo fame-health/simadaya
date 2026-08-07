@@ -18,7 +18,9 @@ class AttendanceSessionResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static ?string $navigationGroup = 'ALUR PELAKSANAAN PKL';
+    protected static ?string $navigationGroup = 'ABSENSI & LOGBOOK';
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $label = 'Sesi Absensi';
 

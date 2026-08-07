@@ -47,7 +47,7 @@ class MahasiswaResource extends Resource
 
     protected static ?string $modelLabel = 'Mahasiswa';
     protected static ?string $pluralModelLabel = 'Mahasiswa';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
 
     public static function shouldRegisterNavigation(): bool
     {

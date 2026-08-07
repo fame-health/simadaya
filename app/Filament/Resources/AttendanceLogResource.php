@@ -17,7 +17,9 @@ class AttendanceLogResource extends Resource
 
     protected static ?string $label = 'Log Absensi';
 
-    protected static ?string $navigationGroup = 'ALUR PELAKSANAAN PKL';
+    protected static ?string $navigationGroup = 'ABSENSI & LOGBOOK';
+
+    protected static ?int $navigationSort = 1;
 
     public static function shouldRegisterNavigation(): bool
     {

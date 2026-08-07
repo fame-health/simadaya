@@ -27,7 +27,7 @@ class FinalLaporanResource extends Resource
 
     public static function getNavigationSort(): ?int
     {
-        return 5;
+        return 6;
     }
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
@@ -107,32 +107,125 @@ class FinalLaporanResource extends Resource
                     ->columns(3),
 
                 Forms\Components\Section::make('Laporan Akhir')
+                    ->description('Silakan unggah laporan akhir magang Anda dalam format PDF.')
                     ->schema([
                         Forms\Components\FileUpload::make('final_laporan')
-                            ->label('Laporan Akhir')
+                            ->label('File Laporan Akhir')
                             ->directory('pengajuan-magang/laporan')
                             ->acceptedFileTypes(['application/pdf'])
-                            ->visible($isMahasiswa)
-                            ->disabled(fn ($record) => !$record || !$record->isDiterima() || $record->final_laporan)
-                            ->required(fn ($record) => $record instanceof PengajuanMagang && $isMahasiswa && $record->isDiterima() && !$record->final_laporan),
+                            ->visible($isMahasiswa || $isAdmin)
+                            ->disabled(fn ($record) => !$record || !$record->isDiterima() || ($record->final_laporan && $isMahasiswa))
+                            ->required(fn ($record) => $record instanceof PengajuanMagang && $isMahasiswa && $record->isDiterima() && !$record->final_laporan)
+                            ->hintAction(
+                                Forms\Components\Actions\Action::make('view_laporan')
+                                    ->label('Lihat Laporan')
+                                    ->icon('heroicon-o-eye')
+                                    ->color('info')
+                                    ->visible(fn ($record) => $record && $record->final_laporan)
+                                    ->url(fn ($record) => asset('storage/' . $record->final_laporan))
+                                    ->openUrlInNewTab()
+                            ),
                     ])
                     ->visible($isMahasiswa || $isAdmin),
 
-                Forms\Components\Section::make('Sertifikat')
+                Forms\Components\Section::make('Sertifikat Magang')
+                    ->description('Bagian verifikasi dan unduh sertifikat resmi.')
                     ->schema([
                         Forms\Components\FileUpload::make('sertifikat')
-                            ->label('Sertifikat')
+                            ->label('File Sertifikat')
                             ->directory('pengajuan-magang/sertifikat')
                             ->acceptedFileTypes(['application/pdf'])
-                            ->visible(fn ($record) => $record instanceof PengajuanMagang && Auth::user()->role === 'admin')
-                            ->disabled(fn ($record) => !$record || !$record->final_laporan || ($record->sertifikat))
-                            ->required(fn ($record) => $record instanceof PengajuanMagang && Auth::user()->role === 'admin' && $record->final_laporan && !$record->sertifikat)
-                            ->afterStateUpdated(function ($state, $set, $record) {
-                                if ($state && $record && $record->final_laporan) {
-                                    $record->status = PengajuanMagang::STATUS_SELESAI;
-                                    $record->save();
+                            ->visible($isAdmin || ($isMahasiswa && fn ($record) => $record?->sertifikat))
+                            ->disabled(true)
+                            ->hintAction(
+                                Forms\Components\Actions\Action::make('view_sertifikat')
+                                    ->label('Lihat Sertifikat')
+                                    ->icon('heroicon-o-document-check')
+                                    ->color('success')
+                                    ->visible(fn ($record) => $record && $record->sertifikat)
+                                    ->url(fn ($record) => asset('storage/' . $record->sertifikat))
+                                    ->openUrlInNewTab()
+                            ),
+
+                        Forms\Components\Placeholder::make('verification_action')
+                            ->label('Aksi Admin')
+                            ->visible($isAdmin)
+                            ->content(function ($record) {
+                                if (!$record || !$record->final_laporan || $record->sertifikat) {
+                                    return new HtmlString('<span class="text-gray-500 italic">Sertifikat sudah diproses atau laporan belum tersedia.</span>');
                                 }
-                            }),
+                                return new HtmlString('
+                                    <div class="mt-2">
+                                        <p class="text-sm text-gray-600 mb-4">Laporan sudah tersedia. Klik tombol di bawah untuk menerbitkan sertifikat resmi beserta QR Code.</p>
+                                    </div>
+                                ');
+                            })
+                            ->hintAction(
+                                Forms\Components\Actions\Action::make('verify_sertifikat_form')
+                                    ->label('Terbitkan Sertifikat Sekarang')
+                                    ->icon('heroicon-o-check-badge')
+                                    ->color('success')
+                                    ->visible(fn ($record) => Auth::user()->role === 'admin' && $record && $record->final_laporan && !$record->sertifikat)
+                                    ->requiresConfirmation()
+                                    ->action(function ($record) {
+                                        // Generate QR code for certificate
+                                        $validationUrl = url('/validate-certificate/' . $record->id);
+                                        $qrCode = new QrCode($validationUrl);
+                                        $qrCode->setSize(120);
+                                        $qrCode->setMargin(10);
+                                        $writer = new PngWriter();
+                                        $qrCodeImage = $writer->write($qrCode);
+                                        $qrCodePath = 'pengajuan-magang/qr-codes/qr_sertifikat_' . $record->id . '.png';
+                                        Storage::disk('public')->put($qrCodePath, $qrCodeImage->getString());
+
+                                        // Fetch the active template for 'sertifikat'
+                                        $template = \App\Models\TemplateSurat::where('jenis_surat', \App\Models\TemplateSurat::JENIS_SERTIFIKAT)
+                                            ->where('is_active', true)
+                                            ->first();
+
+                                        if (!$template) {
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Template Sertifikat Tidak Ditemukan')
+                                                ->body('Pastikan ada template sertifikat yang aktif di Manajemen Surat.')
+                                                ->danger()
+                                                ->send();
+                                            return;
+                                        }
+
+                                        // Prepare data for the template
+                                        $pdfData = [
+                                            'mahasiswa_name' => $record->mahasiswa->user->name,
+                                            'nim' => $record->mahasiswa->nim,
+                                            'pembimbing_name' => $record->pembimbing->user->name ?? 'N/A',
+                                            'tanggal_mulai' => \Illuminate\Support\Carbon::parse($record->tanggal_mulai)->format('d F Y'),
+                                            'tanggal_selesai' => \Illuminate\Support\Carbon::parse($record->tanggal_selesai)->format('d F Y'),
+                                            'bidang_diminati' => $record->bidang_diminati,
+                                            'qr_code_path' => Storage::disk('public')->path($qrCodePath),
+                                            'tanggal_verifikasi' => now()->format('d F Y'),
+                                            'verified_by' => Auth::user()->name,
+                                            'id_pengajuan' => $record->id,
+                                            'nomer_surat' => "070/DISBUD/" . date('Y') . "/" . str_pad($record->id, 3, '0', STR_PAD_LEFT),
+                                            'template' => $template,
+                                        ];
+
+                                        // Render the template content
+                                        $renderedContent = Blade::render($template->content_template, $pdfData);
+
+                                        // Generate PDF for certificate
+                                        $pdf = Pdf::loadHTML($renderedContent);
+                                        $pdfPath = 'pengajuan-magang/sertifikat/sertifikat_' . $record->id . '.pdf';
+                                        Storage::disk('public')->put($pdfPath, $pdf->output());
+
+                                        $record->sertifikat = $pdfPath;
+                                        $record->status = PengajuanMagang::STATUS_SELESAI;
+                                        $record->save();
+
+                                        \Filament\Notifications\Notification::make()
+                                            ->title('Sertifikat Berhasil Diterbitkan')
+                                            ->success()
+                                            ->send();
+                                    }),
+                            ),
                     ])
                     ->visible(fn ($record) => $record instanceof PengajuanMagang && (Auth::user()->role === 'admin' || (Auth::user()->role === 'mahasiswa' && $record->sertifikat))),
             ]);
@@ -476,5 +569,23 @@ class FinalLaporanResource extends Resource
         }
 
         return $pages;
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (!$user) return null;
+
+        $query = static::getModel()::query();
+
+        if ($user->isMahasiswa()) {
+            $query->where('mahasiswa_id', $user->mahasiswa?->id)
+                  ->whereIn('status', [\App\Models\PengajuanMagang::STATUS_DITERIMA, \App\Models\PengajuanMagang::STATUS_SELESAI]);
+        } else {
+            $query->whereIn('status', [\App\Models\PengajuanMagang::STATUS_DITERIMA, \App\Models\PengajuanMagang::STATUS_SELESAI]);
+        }
+
+        return (string) $query->count();
     }
 }

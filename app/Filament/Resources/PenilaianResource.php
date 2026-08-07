@@ -32,7 +32,7 @@ class PenilaianResource extends Resource
 
     public static function getNavigationSort(): ?int
     {
-        return 4;
+        return 5;
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -76,61 +76,114 @@ class PenilaianResource extends Resource
 
         return $form
             ->schema([
-                Forms\Components\Select::make('mahasiswa_id')
-                    ->label('Mahasiswa')
-                    ->relationship('mahasiswa', 'nim')
-                    ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->user->name} ({$record->nim})")
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->disabled($isMahasiswa || $form->getOperation() === 'edit'),
-                Forms\Components\Select::make('pembimbing_id')
-                    ->label('Pembimbing')
-                    ->relationship('pembimbing', 'nip')
-                    ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->user->name} ({$record->nip})")
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->disabled($isMahasiswa),
-                Forms\Components\TextInput::make('aspek_penilaian')
-                    ->label('Aspek Penilaian')
-                    ->required()
-                    ->maxLength(255)
-                    ->disabled($isMahasiswa),
-                Forms\Components\TextInput::make('nilai')
-                    ->label('Nilai')
-                    ->required()
-                    ->numeric()
-                    ->minValue(0)
-                    ->maxValue(100)
-                    ->disabled($isMahasiswa),
-                Forms\Components\TextInput::make('bobot')
-                    ->label('Bobot')
-                    ->required()
-                    ->numeric()
-                    ->minValue(0)
-                    ->maxValue(1)
-                    ->step(0.01)
-                    ->disabled($isMahasiswa),
-                Forms\Components\Textarea::make('keterangan')
-                    ->label('Keterangan')
-                    ->maxLength(65535)
-                    ->columnSpanFull()
-                    ->disabled($isMahasiswa),
-                Forms\Components\TextInput::make('nilai_akhir')
-                    ->label('Nilai Akhir')
-                    ->numeric()
-                    ->disabled()
-                    ->dehydrated(false),
-                Forms\Components\TextInput::make('grade')
-                    ->label('Grade')
-                    ->disabled()
-                    ->dehydrated(false),
-                Forms\Components\DateTimePicker::make('tanggal_penilaian')
-                    ->label('Tanggal Penilaian')
-                    ->required()
-                    ->disabled($isMahasiswa),
+                Forms\Components\Section::make('Informasi Dasar')
+                    ->schema([
+                        Forms\Components\Placeholder::make('mahasiswa_name_display')
+                            ->label('Mahasiswa yang Dinilai')
+                            ->content(fn () => \App\Models\Mahasiswa::find(request()->query('mahasiswa_id'))?->user?->name ?? '-')
+                            ->visible(fn () => $isPembimbing && request()->has('mahasiswa_id')),
+
+                        Forms\Components\Select::make('mahasiswa_id')
+                            ->label('Mahasiswa')
+                            ->relationship('mahasiswa', 'nim')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->user->name} ({$record->nim})")
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->default(fn () => request()->query('mahasiswa_id'))
+                            ->disabled($isMahasiswa || $form->getOperation() === 'edit')
+                            ->hidden(fn () => $isPembimbing && request()->has('mahasiswa_id')),
+
+                        Forms\Components\Hidden::make('mahasiswa_id')
+                            ->default(fn () => request()->query('mahasiswa_id'))
+                            ->visible(fn () => $isPembimbing && request()->has('mahasiswa_id')),
+
+                        Forms\Components\Select::make('pembimbing_id')
+                            ->label('Pembimbing')
+                            ->relationship('pembimbing', 'nip')
+                            ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->user->name} ({$record->nip})")
+                            ->required()
+                            ->searchable()
+                            ->preload()
+                            ->default(fn () => $isPembimbing ? \App\Models\Pembimbing::where('user_id', Auth::id())->first()?->id : null)
+                            ->disabled($isMahasiswa)
+                            ->hidden($isPembimbing),
+
+                        Forms\Components\Hidden::make('pembimbing_id')
+                            ->default(fn () => $isPembimbing ? \App\Models\Pembimbing::where('user_id', Auth::id())->first()?->id : null)
+                            ->visible($isPembimbing),
+
+                        Forms\Components\Hidden::make('bobot')
+                            ->default(1.0),
+
+                        Forms\Components\Hidden::make('aspek_penilaian')
+                            ->default('Penilaian Magang Keseluruhan'),
+                    ])->columns(1),
+
+                Forms\Components\Section::make('Input Nilai')
+                    ->description('Masukkan nilai angka dari 1 hingga 100.')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\TextInput::make('nilai')
+                                    ->label('Masukkan Nilai (1-100)')
+                                    ->required()
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(100)
+                                    ->reactive()
+                                    ->afterStateUpdated(fn ($state, callable $set, callable $get) => static::calculateFinalScore($set, $get))
+                                    ->disabled($isMahasiswa)
+                                    ->placeholder('Input Angka Saja')
+                                    ->extraAttributes(['style' => 'font-size: 1.25rem; font-weight: bold;']),
+
+                                Forms\Components\DateTimePicker::make('tanggal_penilaian')
+                                    ->label('Waktu Penilaian')
+                                    ->required()
+                                    ->default(now())
+                                    ->disabled($isMahasiswa),
+                            ]),
+
+                        Forms\Components\Textarea::make('keterangan')
+                            ->label('Catatan Tambahan (Opsional)')
+                            ->maxLength(65535)
+                            ->columnSpanFull()
+                            ->placeholder('Contoh: Mahasiswa sangat aktif dan disiplin...')
+                            ->disabled($isMahasiswa),
+                    ]),
+
+                Forms\Components\Section::make('Hasil Akhir')
+                    ->schema([
+                        Forms\Components\TextInput::make('nilai_akhir')
+                            ->label('Nilai Akhir')
+                            ->numeric()
+                            ->disabled()
+                            ->dehydrated()
+                            ->extraAttributes(['class' => 'font-bold text-lg']),
+                        Forms\Components\TextInput::make('grade')
+                            ->label('Grade')
+                            ->disabled()
+                            ->dehydrated()
+                            ->extraAttributes(['class' => 'font-black text-xl']),
+                    ])->columns(2),
             ]);
+    }
+
+    public static function calculateFinalScore(callable $set, callable $get)
+    {
+        $nilai = floatval($get('nilai'));
+        $bobot = floatval($get('bobot'));
+        $akhir = $nilai * $bobot;
+
+        $set('nilai_akhir', $akhir);
+
+        $grade = '-';
+        if ($akhir >= 85) $grade = 'A';
+        elseif ($akhir >= 75) $grade = 'B';
+        elseif ($akhir >= 60) $grade = 'C';
+        elseif ($akhir > 0) $grade = 'D';
+
+        $set('grade', $grade);
     }
 
     public static function table(Table $table): Table
@@ -147,126 +200,139 @@ class PenilaianResource extends Resource
         $mahasiswaList = $isPembimbing && $pembimbing
             ? PengajuanMagang::where('pembimbing_id', $pembimbing->id)
                 ->where('status', PengajuanMagang::STATUS_DITERIMA)
+                ->whereNotExists(function ($query) use ($pembimbing) {
+                    $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                        ->from('penilaian')
+                        ->whereColumn('penilaian.mahasiswa_id', 'pengajuan_magang.mahasiswa_id')
+                        ->where('penilaian.pembimbing_id', $pembimbing->id);
+                })
                 ->with(['mahasiswa.user'])
                 ->distinct('mahasiswa_id')
                 ->get()
             : collect([]);
         $mahasiswaCount = $mahasiswaList->count();
 
-        $ungradedCount = $isPembimbing && $pembimbing
-            ? Penilaian::where('pembimbing_id', $pembimbing->id)
-                ->whereNull('nilai')
-                ->count()
-            : 0;
-
         return $table
-            ->heading(function () use ($isPembimbing, $mahasiswaCount, $ungradedCount, $mahasiswaList, $pembimbing) {
-                if (!$isPembimbing) {
-                    return null;
-                }
-
-                $html = '
-                    <div style="background: linear-gradient(135deg, #e0f2fe 0%, #bfdbfe 100%); border: 2px solid #2563eb; border-radius: 12px; padding: 20px; margin: 16px 0; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1);">
-                        <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                            <div style="background: #2563eb; color: white; border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-right: 16px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); transition: transform 0.2s;" title="Daftar Mahasiswa Bimbingan">
-                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                                </svg>
+            ->heading(function () use ($isPembimbing, $isMahasiswa, $mahasiswaCount, $mahasiswaList, $pembimbing, $mahasiswa) {
+                if ($isPembimbing) {
+                    if ($mahasiswaCount === 0) {
+                        return new HtmlString('
+                            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; width: 100%; display: flex; align-items: center; gap: 10px;">
+                                <div style="background: #16a34a; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                    <svg style="width: 14px; height: 14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                </div>
+                                <p style="color: #15803d; font-size: 14px; margin: 0; font-weight: 700;">SELESAI: Semua mahasiswa bimbingan Anda sudah diberikan nilai magang.</p>
                             </div>
-                            <h3 style="color: #1e40af; font-size: 22px; font-weight: 700; margin: 0;">DAFTAR MAHASISWA BIMBINGAN (' . e($mahasiswaCount) . ' MAHASISWA, ' . e($ungradedCount) . ' BELUM DINILAI)</h3>
-                        </div>
-                        <div style="background: #bfdbfe; border-left: 4px solid #2563eb; padding: 12px 16px; border-radius: 6px;">
-                            <p style="color: #1e40af; font-size: 16px; margin: 0; line-height: 1.5;">
-                                Tinjau dan masukkan nilai untuk mahasiswa yang Anda bimbing. Gunakan filter di bawah untuk memilih mahasiswa tertentu.
-                            </p>
-                        </div>';
+                        ');
+                    }
 
-                if ($mahasiswaCount > 0) {
+                    $html = '
+                        <div style="background: linear-gradient(to right, #ffffff, #f8fafc); border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+                                <div style="background: #2563eb; color: white; border-radius: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">
+                                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 style="color: #1e293b; font-size: 16px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">Mahasiswa Belum Dinilai</h3>
+                                    <p style="color: #64748b; font-size: 12px; margin: 0; font-weight: 500;">Terdapat ' . e($mahasiswaCount) . ' mahasiswa yang menunggu penilaian Anda.</p>
+                                </div>
+                            </div>';
+
                     $html .= '
-                        <div style="margin-top: 16px;">
-                            <table style="width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: separate; border-spacing: 0; background: #ffffff;">
                                 <thead>
-                                    <tr style="background: #2563eb; color: white;">
-                                        <th style="padding: 12px; text-align: left; font-size: 14px; font-weight: 600;">No</th>
-                                        <th style="padding: 12px; text-align: left; font-size: 14px; font-weight: 600;">Nama Mahasiswa</th>
-                                        <th style="padding: 12px; text-align: left; font-size: 14px; font-weight: 600;">NIM</th>
-                                        <th style="padding: 12px; text-align: left; font-size: 14px; font-weight: 600;">Status Magang</th>
-                                        <th style="padding: 12px; text-align: left; font-size: 14px; font-weight: 600;">Status Penilaian</th>
-                                        <th style="padding: 12px; text-align: left; font-size: 14px; font-weight: 600;">Aksi</th>
+                                    <tr>
+                                        <th style="padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; border-bottom: 2px solid #f1f5f9;">No</th>
+                                        <th style="padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; border-bottom: 2px solid #f1f5f9;">Nama Mahasiswa</th>
+                                        <th style="padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; border-bottom: 2px solid #f1f5f9;">NIM</th>
+                                        <th style="padding: 10px 16px; text-align: right; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; border-bottom: 2px solid #f1f5f9;">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>';
                     foreach ($mahasiswaList as $index => $pengajuan) {
-                        $penilaian = Penilaian::where('mahasiswa_id', $pengajuan->mahasiswa_id)
-                            ->where('pembimbing_id', $pembimbing->id)
-                            ->first();
-                        $statusPenilaian = $penilaian && $penilaian->nilai !== null ? 'Sudah Dinilai' : 'Belum Dinilai';
-                        $statusColor = $penilaian && $penilaian->nilai !== null ? '#dcfce7' : '#fef2f2';
-                        $statusTextColor = $penilaian && $penilaian->nilai !== null ? '#15803d' : '#991b1b';
-
                         $html .= '
-                            <tr style="border-bottom: 1px solid #e5e7eb;">
-                                <td style="padding: 12px; font-size: 14px; color: #1e40af;">' . ($index + 1) . '</td>
-                                <td style="padding: 12px; font-size: 14px; color: #1e40af;">' . e($pengajuan->mahasiswa->user->name) . '</td>
-                                <td style="padding: 12px; font-size: 14px; color: #1e40af;">' . e($pengajuan->mahasiswa->nim) . '</td>
-                                <td style="padding: 12px; font-size: 14px;">
-                                    <span style="padding: 4px 8px; border-radius: 4px; background: #dcfce7; color: #15803d; font-weight: 600;">
-                                        ' . e($pengajuan->status) . '
-                                    </span>
-                                </td>
-                                <td style="padding: 12px; font-size: 14px;">
-                                    <span style="padding: 4px 8px; border-radius: 4px; background: ' . $statusColor . '; color: ' . $statusTextColor . '; font-weight: 600;">
-                                        ' . e($statusPenilaian) . '
-                                    </span>
-                                </td>
-                                <td style="padding: 12px; font-size: 14px;">
-                                    <button type="button"
-                                            wire:loading.attr="disabled"
-                                            wire:click="mountAction(\'create\', { data: { mahasiswa_id: ' . $pengajuan->mahasiswa_id . ' } })"
-                                            class="filament-button filament-button-size-sm"
-                                            style="background: #2563eb; color: white; padding: 8px 16px; font-size: 14px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); transition: background 0.2s;"
-                                            title="Buat Penilaian Baru untuk ' . e($pengajuan->mahasiswa->user->name) . '">
-                                        <svg class="w-5 h-5 inline-block mr-1 animate-spin" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" wire:loading wire:target="mountAction(\'create\')">
-                                            <path clip-rule="evenodd" d="M12 19C15.866 19 19 15.866 19 12C19 8.13401 15.866 5 12 5C8.13401 5 5 8.13401 5 12C5 15.866 8.13401 19 12 19ZM12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill-rule="evenodd" fill="currentColor" opacity="0.2"></path>
-                                            <path d="M2 12C2 6.47715 6.47715 2 12 2V5C8.13401 5 5 8.13401 5 12H2Z" fill="currentColor"></path>
+                            <tr style="transition: background 0.2s;">
+                                <td style="padding: 14px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #f8fafc;">' . ($index + 1) . '</td>
+                                <td style="padding: 14px 16px; font-size: 14px; color: #0f172a; font-weight: 700; border-bottom: 1px solid #f8fafc;">' . e($pengajuan->mahasiswa->user->name) . '</td>
+                                <td style="padding: 14px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #f8fafc;">' . e($pengajuan->mahasiswa->nim) . '</td>
+                                <td style="padding: 14px 16px; text-align: right; border-bottom: 1px solid #f8fafc;">
+                                    <a href="' . static::getUrl('create', ['mahasiswa_id' => $pengajuan->mahasiswa_id]) . '"
+                                       style="background: #2563eb; color: white; padding: 8px 18px; font-size: 12px; font-weight: 800; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); transition: all 0.2s;"
+                                       onmouseover="this.style.background=\'#1e40af\'; this.style.transform=\'translateY(-1px)\'"
+                                       onmouseout="this.style.background=\'#2563eb\'; this.style.transform=\'translateY(0)\'">
+                                        <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
-                                        <svg class="w-5 h-5 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" wire:loading.remove wire:target="mountAction(\'create\')">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                        </svg>
-                                        New Penilaian
-                                    </button>
+                                        BERI NILAI
+                                    </a>
                                 </td>
                             </tr>';
                     }
                     $html .= '
                                 </tbody>
                             </table>
-                        </div>';
-                } else {
-                    $html .= '
-                        <div style="margin-top: 16px; background: #fef2f2; border-left: 4px solid #dc2626; padding: 12px 16px; border-radius: 6px;">
-                            <p style="color: #991b1b; font-size: 16px; margin: 0; line-height: 1.5;">
-                                Tidak ada mahasiswa bimbingan yang ditemukan.
-                            </p>
-                        </div>';
+                        </div>
+
+                        <div style="margin-top: 24px; margin-bottom: 8px; padding: 10px 0; border-top: 1px dashed #cbd5e1; border-bottom: 1px dashed #cbd5e1;">
+                            <h4 style="color: #64748b; font-size: 13px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px;">
+                                <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                RIWAYAT PENILAIAN (DAFTAR MAHASISWA YANG SUDAH DINILAI)
+                            </h4>
+                        </div>
+                    </div>';
+
+                    return new HtmlString($html);
                 }
 
-                $html .= '
-                    <div style="margin-top: 16px;">
-                        <button type="button"
-                                class="filament-button filament-button-size-lg"
-                                style="background: #2563eb; color: white; padding: 12px 24px; font-size: 18px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); transition: background 0.2s;"
-                                title="Filter berdasarkan nama mahasiswa"
-                                onclick="document.querySelector(\'[wire\\\\:model=\\\"tableFilters.mahasiswa.value\\\"]\').focus();">
-                            <svg class="w-6 h-6 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-                            </svg>
-                            Table dibawah adalah nama mahasiswa yang sudah dinilai
-                        </button>
-                    </div>
-                </div>';
+                if ($isMahasiswa && $mahasiswa) {
+                    $totalNilai = Penilaian::where('mahasiswa_id', $mahasiswa->id)->sum('nilai_akhir');
+                    $avgNilai = Penilaian::where('mahasiswa_id', $mahasiswa->id)->avg('nilai');
+                    $count = Penilaian::where('mahasiswa_id', $mahasiswa->id)->count();
 
-                return new HtmlString($html);
+                    $grade = '-';
+                    $gradeColor = '#6b7280';
+                    $message = 'Nilai Anda sedang diproses oleh pembimbing.';
+
+                    if ($count > 0) {
+                        if ($totalNilai >= 85) { $grade = 'A'; $gradeColor = '#16a34a'; $message = 'Luar biasa! Pertahankan prestasi Anda.'; }
+                        elseif ($totalNilai >= 75) { $grade = 'B'; $gradeColor = '#2563eb'; $message = 'Sangat baik! Teruslah berkembang.'; }
+                        elseif ($totalNilai >= 60) { $grade = 'C'; $gradeColor = '#d97706'; $message = 'Cukup baik. Tingkatkan lagi usaha Anda.'; }
+                        else { $grade = 'D'; $gradeColor = '#dc2626'; $message = 'Jangan menyerah, tetap semangat belajar!'; }
+                    }
+
+                    return new HtmlString('
+                        <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid #16a34a; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.1);">
+                            <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center;">
+                                <div style="flex: 1; min-width: 250px;">
+                                    <h3 style="color: #15803d; font-size: 24px; font-weight: 800; margin: 0 0 8px 0;">Halo, ' . e(Auth::user()->name) . '! 👋</h3>
+                                    <p style="color: #166534; font-size: 16px; margin: 0; line-height: 1.6;">Berikut adalah ringkasan hasil penilaian magang Anda. Tetap semangat dan terus berkarya!</p>
+                                    <div style="margin-top: 16px; display: flex; gap: 12px;">
+                                        <div style="background: #ffffff; padding: 12px 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                            <span style="display: block; font-size: 12px; color: #6b7280; font-weight: 600; text-transform: uppercase;">Rata-rata Nilai</span>
+                                            <span style="font-size: 20px; font-weight: 800; color: #111827;">' . number_format($avgNilai ?? 0, 2) . '</span>
+                                        </div>
+                                        <div style="background: #ffffff; padding: 12px 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                            <span style="display: block; font-size: 12px; color: #6b7280; font-weight: 600; text-transform: uppercase;">Total Aspek</span>
+                                            <span style="font-size: 20px; font-weight: 800; color: #111827;">' . $count . '</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="background: white; padding: 20px; border-radius: 20px; text-align: center; min-width: 150px; border: 4px solid ' . $gradeColor . ';">
+                                    <span style="display: block; font-size: 14px; font-weight: 700; color: #6b7280; margin-bottom: 4px;">GRADE AKHIR</span>
+                                    <span style="font-size: 64px; font-weight: 900; color: ' . $gradeColor . '; line-height: 1;">' . $grade . '</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px dashed #bbf7d0;">
+                                <p style="font-style: italic; color: #15803d; font-weight: 500; margin: 0;">" ' . e($message) . ' "</p>
+                            </div>
+                        </div>
+                    ');
+                }
+
+                return null;
             })
             ->query(function () use ($isMahasiswa, $isPembimbing, $mahasiswa, $pembimbing) {
                 $query = Penilaian::query()->with(['mahasiswa.user', 'pembimbing.user']);
@@ -281,29 +347,54 @@ class PenilaianResource extends Resource
                 Tables\Columns\TextColumn::make('mahasiswa.user.name')
                     ->label('Mahasiswa')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->visible($isPembimbing || $isAdmin),
                 Tables\Columns\TextColumn::make('pembimbing.user.name')
-                    ->label('Pembimbing')
+                    ->label('Penilai')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->description(fn($record) => $record->pembimbing->nip),
                 Tables\Columns\TextColumn::make('aspek_penilaian')
-                    ->label('Aspek Penilaian')
-                    ->searchable(),
+                    ->label('Kategori Penilaian')
+                    ->searchable()
+                    ->weight('bold')
+                    ->tooltip('Bidang atau aspek yang dinilai oleh pembimbing'),
                 Tables\Columns\TextColumn::make('nilai')
-                    ->label('Nilai')
-                    ->sortable(),
+                    ->label('Nilai Mentah')
+                    ->sortable()
+                    ->badge()
+                    ->color(fn ($state): string => match (true) {
+                        $state >= 85 => 'success',
+                        $state >= 70 => 'info',
+                        $state >= 60 => 'warning',
+                        default => 'danger',
+                    })
+                    ->alignCenter(),
                 Tables\Columns\TextColumn::make('bobot')
-                    ->label('Bobot')
-                    ->sortable(),
+                    ->label('Porsi (%)')
+                    ->formatStateUsing(fn ($state) => ($state * 100) . '%')
+                    ->tooltip('Persentase pengaruh terhadap nilai akhir')
+                    ->alignCenter(),
                 Tables\Columns\TextColumn::make('nilai_akhir')
-                    ->label('Nilai Akhir')
-                    ->sortable(),
+                    ->label('Skor Akhir')
+                    ->sortable()
+                    ->weight('black')
+                    ->color('primary')
+                    ->alignCenter(),
                 Tables\Columns\TextColumn::make('grade')
                     ->label('Grade')
-                    ->sortable(),
+                    ->badge()
+                    ->size('lg')
+                    ->color(fn ($state): string => match ($state) {
+                        'A' => 'success',
+                        'B' => 'info',
+                        'C' => 'warning',
+                        default => 'danger',
+                    })
+                    ->alignCenter(),
                 Tables\Columns\TextColumn::make('tanggal_penilaian')
-                    ->label('Tanggal Penilaian')
-                    ->dateTime()
+                    ->label('Waktu Penilaian')
+                    ->date('d M Y')
                     ->sortable(),
             ])
             ->filters([
@@ -346,13 +437,14 @@ class PenilaianResource extends Resource
     {
         return [
             'index' => Pages\ListPenilaians::route('/'),
+            'create' => Pages\CreatePenilaian::route('/create'),
         ];
     }
 
     public static function canCreate(): bool
     {
-        $user = Auth::user();
-        return $user && $user->role === 'pembimbing';
+        // Kontrol akses dipindahkan ke PenilaianPolicy.php
+        return Auth::user()->role === 'admin' || Auth::user()->role === 'pembimbing';
     }
 
     public static function canEdit($record): bool

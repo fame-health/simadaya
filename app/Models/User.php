@@ -102,4 +102,15 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         // Izinkan semua pengguna yang aktif (Admin, Pembimbing, dan Mahasiswa) untuk login ke dashboard
         return $this->is_active;
     }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new \App\Notifications\ResetPasswordIndonesian($token));
+    }
 }

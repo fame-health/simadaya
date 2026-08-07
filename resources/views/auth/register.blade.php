@@ -3,225 +3,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - SIMADAYA</title>
+    <title>Daftar - SIMADAYA</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        .input-focus {
-            transition: all 0.3s ease;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
-        .input-focus:focus {
-            outline: none;
+        .custom-input {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .custom-input:focus {
+            box-shadow: 0 0 0 4px rgba(22, 188, 92, 0.1);
             border-color: #16BC5C;
-            box-shadow: 0 0 0 3px rgba(22, 188, 92, 0.1);
-            transform: translateY(-1px);
         }
 
-        .btn-hover {
+        .btn-primary {
+            background: linear-gradient(135deg, #16BC5C 0%, #059669 100%);
             transition: all 0.3s ease;
-            padding: 12px 24px;
         }
 
-        .btn-hover:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(22, 188, 92, 0.3);
-            background-color: #059669;
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(22, 188, 92, 0.3);
         }
 
-        .form-container {
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
+        .branding-overlay {
+            background: linear-gradient(135deg, rgba(5, 150, 105, 0.85) 0%, rgba(6, 78, 59, 0.9) 100%);
         }
 
-        .dark .form-container {
-            background: rgba(31, 41, 55, 0.95);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .floating-elements {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            pointer-events: none;
-        }
-
-        .floating-circle {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            animation: float 6s ease-in-out infinite;
-        }
-
-        .floating-circle:nth-child(1) {
-            width: 80px;
-            height: 80px;
-            top: 20%;
-            left: 10%;
-            animation-delay: 0s;
-        }
-
-        .floating-circle:nth-child(2) {
-            width: 120px;
-            height: 120px;
-            top: 60%;
-            right: 10%;
-            animation-delay: 2s;
-        }
-
-        .floating-circle:nth-child(3) {
-            width: 60px;
-            height: 60px;
-            top: 80%;
-            left: 20%;
-            animation-delay: 4s;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(180deg); }
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-6 relative" style="background: url('https://disbud.riau.go.id/storage/images/content/hero-background/1733462001-675287f13a9ad.png') no-repeat center center / cover;">
-    <div class="absolute inset-0 bg-black/40 z-0"></div>
+<body class="bg-white min-h-screen overflow-x-hidden">
+    <div class="flex flex-col lg:flex-row min-h-screen">
 
-    <div class="floating-elements">
-        <div class="floating-circle"></div>
-        <div class="floating-circle"></div>
-        <div class="floating-circle"></div>
-    </div>
-
-    <div class="form-container dark:bg-gray-800 rounded-2xl shadow-2xl p-10 w-full max-w-md relative z-10">
-        <div class="text-center mb-8">
-            <div class="flex justify-center items-center gap-4 mb-4">
-                <img src="https://disbud.riau.go.id/assets/guest/img/image/logo-riau.png" alt="Logo Riau" class="w-16 h-auto">
-                <img src="https://disbud.riau.go.id/assets/guest/img/image/logo-disbud.png" alt="Logo Disbud" class="w-16 h-auto">
+        <!-- Left Side: Branding (Hidden on Mobile) -->
+        <div class="relative hidden lg:flex w-full lg:w-3/5 items-center justify-center p-8 lg:p-12 overflow-hidden min-h-screen">
+            <!-- Background Image -->
+            <div class="absolute inset-0 z-0">
+                <img src="https://disbud.riau.go.id/storage/images/content/hero-background/1733462001-675287f13a9ad.png"
+                     alt="Background"
+                     class="w-full h-full object-cover">
+                <div class="absolute inset-0 branding-overlay backdrop-blur-sm"></div>
             </div>
-            <h2 class="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">SIMADAYA</h2>
-            <p class="text-gray-600 dark:text-gray-400">Registrasi Akun Magang</p>
+
+            <!-- Branding Content -->
+            <div class="relative z-10 text-center lg:text-left max-w-xl animate-fade-in">
+                <div class="flex justify-center lg:justify-start items-center gap-4 mb-8">
+                    <div class="p-3 bg-white/95 rounded-2xl shadow-xl">
+                        <img src="https://disbud.riau.go.id/assets/guest/img/image/logo-riau.png" alt="Logo Riau" class="h-12 lg:h-16 w-auto">
+                    </div>
+                    <div class="p-3 bg-white/95 rounded-2xl shadow-xl">
+                        <img src="https://disbud.riau.go.id/assets/guest/img/image/logo-disbud.png" alt="Logo Disbud" class="h-12 lg:h-16 w-auto">
+                    </div>
+                </div>
+
+                <h1 class="text-4xl lg:text-6xl font-extrabold text-white mb-4 tracking-tight">
+                    SIMADAYA
+                </h1>
+                <p class="text-xl lg:text-2xl text-emerald-50 font-medium opacity-90 mb-6">
+                    Mulai Perjalanan Magang Anda di Dinas Kebudayaan Provinsi Riau
+                </p>
+                <div class="hidden lg:block h-1 w-24 bg-emerald-400 rounded-full"></div>
+            </div>
+
+            <!-- Desktop Footer Info -->
+            <div class="hidden lg:block absolute bottom-12 left-12 text-emerald-100/50 text-sm font-medium">
+                &copy; {{ date('Y') }} Dinas Kebudayaan Provinsi Riau.
+            </div>
         </div>
 
-        @if (session('status'))
-            <div class="mb-4 text-green-600 text-sm text-center font-semibold">
-                {{ session('status') }}
-            </div>
-        @endif
+        <!-- Right Side: Registration Form -->
+        <div class="w-full lg:w-2/5 flex items-center justify-center p-6 sm:p-12 lg:p-16 bg-gray-50 lg:bg-white overflow-y-auto">
+            <div class="w-full max-w-md animate-fade-in" style="animation-delay: 0.2s;">
+                <div class="mb-8 text-center lg:text-left">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Buat Akun Baru</h2>
+                    <p class="text-gray-500 font-medium text-base">Silakan lengkapi data di bawah ini untuk mendaftar.</p>
+                </div>
 
-        @if ($errors->any())
-            <div class="mb-4 text-red-500 text-sm text-center">
-                {{ __('Terjadi kesalahan. Silakan periksa kembali.') }}
-            </div>
-        @endif
-
-        <form method="POST" action="{{ route('register') }}" class="space-y-6">
-            @csrf
-
-            <!-- Name -->
-            <div>
-                <label for="name" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">
-                    Nama
-                </label>
-                <input
-                    id="name"
-                    class="input-focus block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    type="text"
-                    name="name"
-                    value="{{ old('name') }}"
-                    required
-                    autofocus
-                    autocomplete="name"
-                >
-                @error('name')
-                    <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <!-- Email -->
-            <div>
-                <label for="email" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">
-                    Email
-                </label>
-                <input
-                    id="email"
-                    class="input-focus block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    type="email"
-                    name="email"
-                    value="{{ old('email') }}"
-                    required
-                    autocomplete="username"
-                >
-                @error('email')
-                    <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <!-- Password -->
-            <div>
-                <label for="password" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">
-                    Password
-                </label>
-                <input
-                    id="password"
-                    class="input-focus block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    type="password"
-                    name="password"
-                    required
-                    autocomplete="new-password"
-                >
-                @error('password')
-                    <p class="mt-2 text-sm text-red-500">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <!-- Confirm Password -->
-            <div>
-                <label for="password_confirmation" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2">
-                    Konfirmasi Password
-                </label>
-                <input
-                    id="password_confirmation"
-                    class="input-focus block w-full rounded-xl border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    type="password"
-                    name="password_confirmation"
-                    required
-                    autocomplete="new-password"
-                >
-            </div>
-
-            <!-- Terms Agreement -->
-            <div class="text-sm text-gray-600 dark:text-gray-400">
-                Dengan mendaftar, Anda menyetujui <a href="#" class="text-green-600 hover:underline">Ketentuan Layanan</a> dan <a href="#" class="text-green-600 hover:underline">Kebijakan Privasi</a> kami.
-            </div>
-
-            <div class="flex flex-col space-y-4">
-                <button
-                    type="submit"
-                    class="btn-hover w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl focus:outline-none focus:ring-4 focus:ring-green-300"
-                >
-                    Register
-                </button>
-
-                <a
-                    href="{{ route('login') }}"
-                    class="w-full inline-block text-center btn-hover border-2 border-green-600 text-green-700 hover:text-white hover:bg-green-600 font-semibold rounded-xl transition duration-200"
-                >
-                    Sign In
-                </a>
-
-                @if (Route::has('password.request'))
-                    <div class="text-center">
-                        <a
-                            class="text-sm text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors duration-200 hover:underline"
-                            href="{{ route('password.request') }}"
-                        >
-                            Forgot your password?
-                        </a>
+                {{-- Errors --}}
+                @if ($errors->any())
+                    <div class="mb-6 p-4 rounded-xl bg-red-50 text-red-700 text-sm font-medium border border-red-100 flex items-center gap-2">
+                        <i data-lucide="alert-circle" class="w-4 h-4 text-red-500"></i>
+                        {{ __('Ada masalah dengan data registrasi Anda.') }}
                     </div>
                 @endif
+
+                <form method="POST" action="{{ route('register') }}" class="space-y-5">
+                    @csrf
+
+                    {{-- Name --}}
+                    <div>
+                        <label for="name" class="block text-sm font-bold text-gray-700 mb-2 ml-1">
+                            Nama Lengkap
+                        </label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-500">
+                                <i data-lucide="user" class="w-5 h-5"></i>
+                            </div>
+                            <input
+                                id="name"
+                                class="custom-input block w-full pl-11 pr-4 py-3.5 bg-white lg:bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 text-sm focus:outline-none placeholder:text-gray-400 shadow-sm"
+                                type="text"
+                                name="name"
+                                placeholder="Masukkan nama lengkap"
+                                value="{{ old('name') }}"
+                                required
+                                autofocus
+                            >
+                        </div>
+                        @error('name')
+                            <p class="mt-1.5 text-xs text-red-500 ml-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Email --}}
+                    <div>
+                        <label for="email" class="block text-sm font-bold text-gray-700 mb-2 ml-1">
+                            Email
+                        </label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-500">
+                                <i data-lucide="mail" class="w-5 h-5"></i>
+                            </div>
+                            <input
+                                id="email"
+                                class="custom-input block w-full pl-11 pr-4 py-3.5 bg-white lg:bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 text-sm focus:outline-none placeholder:text-gray-400 shadow-sm"
+                                type="email"
+                                name="email"
+                                placeholder="nama@email.com"
+                                value="{{ old('email') }}"
+                                required
+                            >
+                        </div>
+                        @error('email')
+                            <p class="mt-1.5 text-xs text-red-500 ml-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Password --}}
+                    <div>
+                        <label for="password" class="block text-sm font-bold text-gray-700 mb-2 ml-1">
+                            Kata Sandi
+                        </label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-500">
+                                <i data-lucide="lock" class="w-5 h-5"></i>
+                            </div>
+                            <input
+                                id="password"
+                                class="custom-input block w-full pl-11 pr-12 py-3.5 bg-white lg:bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 text-sm focus:outline-none placeholder:text-gray-400 shadow-sm"
+                                type="password"
+                                name="password"
+                                placeholder="Min. 8 karakter"
+                                required
+                            >
+                            <button
+                                type="button"
+                                onclick="toggleVisibility('password', 'eyeIcon1', 'eyeOffIcon1')"
+                                class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-emerald-600 transition-colors"
+                            >
+                                <i data-lucide="eye" id="eyeIcon1" class="w-5 h-5"></i>
+                                <i data-lucide="eye-off" id="eyeOffIcon1" class="w-5 h-5 hidden"></i>
+                            </button>
+                        </div>
+                        @error('password')
+                            <p class="mt-1.5 text-xs text-red-500 ml-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Password Confirmation --}}
+                    <div>
+                        <label for="password_confirmation" class="block text-sm font-bold text-gray-700 mb-2 ml-1">
+                            Konfirmasi Kata Sandi
+                        </label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-emerald-500">
+                                <i data-lucide="check-square" class="w-5 h-5"></i>
+                            </div>
+                            <input
+                                id="password_confirmation"
+                                class="custom-input block w-full pl-11 pr-12 py-3.5 bg-white lg:bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 text-sm focus:outline-none placeholder:text-gray-400 shadow-sm"
+                                type="password"
+                                name="password_confirmation"
+                                placeholder="Ulangi kata sandi"
+                                required
+                            >
+                            <button
+                                type="button"
+                                onclick="toggleVisibility('password_confirmation', 'eyeIcon2', 'eyeOffIcon2')"
+                                class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-emerald-600 transition-colors"
+                            >
+                                <i data-lucide="eye" id="eyeIcon2" class="w-5 h-5"></i>
+                                <i data-lucide="eye-off" id="eyeOffIcon2" class="w-5 h-5 hidden"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pt-4">
+                        <button
+                            type="submit"
+                            class="btn-primary w-full py-4 px-6 text-white font-bold rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-200 transition-all text-base shadow-lg shadow-emerald-200"
+                        >
+                            Daftar Sekarang
+                        </button>
+                    </div>
+
+                    <div class="text-center mt-8">
+                        <p class="text-sm font-medium text-gray-500">
+                            Sudah memiliki akun?
+                            <a href="{{ route('login') }}" class="font-bold text-emerald-600 hover:text-emerald-700 transition-colors decoration-2 underline-offset-4 hover:underline">
+                                Masuk di sini
+                            </a>
+                        </p>
+                    </div>
+                </form>
+
+                <!-- Mobile Copyright -->
+                <p class="lg:hidden text-center mt-12 text-gray-400 text-xs font-medium">
+                    &copy; {{ date('Y') }} Dinas Kebudayaan Provinsi Riau.
+                </p>
             </div>
-        </form>
+        </div>
     </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Password visibility toggle function
+        function toggleVisibility(inputId, eyeId, eyeOffId) {
+            const input = document.getElementById(inputId);
+            const eye = document.getElementById(eyeId);
+            const eyeOff = document.getElementById(eyeOffId);
+
+            if (input.type === "password") {
+                input.type = "text";
+                eye.classList.add('hidden');
+                eyeOff.classList.remove('hidden');
+            } else {
+                input.type = "password";
+                eye.classList.remove('hidden');
+                eyeOff.classList.add('hidden');
+            }
+        }
+    </script>
 </body>
 </html>

@@ -19,9 +19,9 @@ class PembimbingResource extends Resource
         protected static ?string $navigationGroup = 'ALUR PELAKSANAAN PKL';
 
     public static function getNavigationSort(): ?int
-{
-    return 3; // Ganti X dengan angka sesuai urutan yang kamu inginkan
-}
+    {
+        return 4;
+    }
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -119,5 +119,10 @@ class PembimbingResource extends Resource
             'create' => Pages\CreatePembimbing::route('/create'),
             'edit' => Pages\EditPembimbing::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return (string) static::getModel()::count();
     }
 }

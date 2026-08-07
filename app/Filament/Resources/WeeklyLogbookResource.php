@@ -21,6 +21,11 @@ class WeeklyLogbookResource extends Resource
 
     protected static ?string $navigationGroup = 'ALUR PELAKSANAAN PKL';
 
+    public static function getNavigationSort(): ?int
+    {
+        return 3;
+    }
+
     protected static ?string $label = 'Logbook Mingguan';
 
     public static function shouldRegisterNavigation(): bool
@@ -258,5 +263,24 @@ class WeeklyLogbookResource extends Resource
             'view' => Pages\ViewWeeklyLogbook::route('/{record}'),
             'edit' => Pages\EditWeeklyLogbook::route('/{record}/edit'),
         ];
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (!$user) return null;
+
+        if ($user->isMahasiswa()) {
+            return (string) static::getModel()::where('mahasiswa_id', $user->mahasiswa?->id)->count();
+        }
+
+        if ($user->isPembimbing()) {
+            return (string) static::getModel()::whereHas('mahasiswa.pengajuanMagang', function ($q) use ($user) {
+                $q->where('pembimbing_id', $user->pembimbing?->id);
+            })->count();
+        }
+
+        return (string) static::getModel()::count();
     }
 }

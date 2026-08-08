@@ -34,10 +34,17 @@ class QRCodeDisplay extends Component
 
     public function decrementCountdown()
     {
-        // 1. Ambil data sesi terbaru dari database untuk sinkronisasi
-        $this->session->refresh();
+        // Ganti refresh() dengan query baru langsung ke DB untuk menghindari cache model
+        $freshSession = AttendanceSession::find($this->session->id);
 
-        // 2. Jika sesi sudah tidak aktif, hentikan countdown di 0
+        if (!$freshSession) {
+            return;
+        }
+
+        // Update instance session agar render() menggunakan data terbaru
+        $this->session = $freshSession;
+
+        // Jika sesi sudah tidak aktif, hentikan countdown di 0
         if ($this->session->status !== 'active') {
             $this->countdown = 0;
             return;
@@ -62,8 +69,8 @@ class QRCodeDisplay extends Component
 
     public function render()
     {
-        // Paksa refresh data session setiap kali polling/render ulang
-        $this->session->refresh();
+        // Pastikan render selalu mengambil data paling segar dari DB
+        $this->session = AttendanceSession::find($this->session->id);
 
         return view('livewire.attendance.q-r-code-display');
     }

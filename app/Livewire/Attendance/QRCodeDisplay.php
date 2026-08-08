@@ -34,14 +34,15 @@ class QRCodeDisplay extends Component
 
     public function decrementCountdown()
     {
-        // 1. Ambil data sesi terbaru dari database
+        // 1. Ambil data sesi terbaru dari database untuk sinkronisasi
         $this->session->refresh();
 
-        // 2. Cek apakah token di database SUDAH BERUBAH dibanding token yang sedang tampil di layar
-        if ($this->session->current_token !== $this->token) {
-            // JIKA BERUBAH: Reset hitungan ke 10 dan update QR
+        // 2. Cek apakah token di database SUDAH BERUBAH
+        // Kita bandingkan token di memori ($this->token) dengan yang ada di DB
+        if ($this->session->current_token !== $this->token && !empty($this->session->current_token)) {
+            // JIKA BERUBAH: Update state di frontend dan reset countdown ke 10
             $this->token = $this->session->current_token;
-            $this->expiredAt = $this->session->expires_at->toDateTimeString();
+            $this->expiredAt = $this->session->expires_at ? $this->session->expires_at->toDateTimeString() : now()->toDateTimeString();
             $this->countdown = 10;
             $this->generateQRCode(app(QRCodeService::class));
         } else {
@@ -49,6 +50,7 @@ class QRCodeDisplay extends Component
             if ($this->countdown > 0) {
                 $this->countdown--;
             } else {
+                // Jika sudah 0, tetap di 0 sambil menunggu Cron Job/Command mengupdate database
                 $this->countdown = 0;
             }
         }

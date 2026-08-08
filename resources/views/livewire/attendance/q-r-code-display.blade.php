@@ -13,7 +13,8 @@
             {{ $countdown }}s
         </div>
         <div class="text-[10px] text-gray-300 mt-2">
-            Last Sync: {{ now('Asia/Jakarta')->format('H:i:s') }} (WIB)
+            Last Sync: {{ now('Asia/Jakarta')->format('H:i:s') }} (WIB) <br>
+            DB Token: {{ substr($session->current_token, 0, 8) }}...
         </div>
     </div>
 

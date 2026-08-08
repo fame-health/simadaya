@@ -32,6 +32,21 @@ class QRCodeDisplay extends Component
         );
     }
 
+    public function getListeners()
+    {
+        return [
+            "echo-private:attendance-session.{$this->session->id},.token.updated" => 'onTokenUpdated',
+        ];
+    }
+
+    public function onTokenUpdated($data)
+    {
+        $this->token = $data['token'];
+        $this->expiredAt = $data['expired_at'];
+        $this->countdown = 10;
+        $this->generateQRCode(app(QRCodeService::class));
+    }
+
     public function decrementCountdown()
     {
         // Ganti refresh() dengan query baru langsung ke DB untuk menghindari cache model

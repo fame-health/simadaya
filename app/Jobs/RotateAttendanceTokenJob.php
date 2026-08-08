@@ -29,35 +29,37 @@ class RotateAttendanceTokenJob implements ShouldQueue
             return;
         }
 
-        // Check if session has been active for more than 2 hours
+        // Cek durasi 2 jam
         if ($session->started_at && $session->started_at->diffInHours(now('Asia/Jakarta')) >= 2) {
             $session->update([
                 'status' => 'inactive',
                 'ended_at' => now('Asia/Jakarta'),
             ]);
-
-            // You might want to broadcast a 'session.closed' event here if needed
             return;
         }
 
         try {
-            DB::transaction(function () use ($session, $tokenGenerator) {
-                $newToken = $tokenGenerator->generate();
-                // Paksa waktu Jakarta saat menyimpan ke database
-                $expiresAt = now('Asia/Jakarta')->addSeconds(10);
+            $newToken = $tokenGenerator->generate();
+            $expiresAt = now('Asia/Jakarta')->addSeconds(10);
 
-                $session->update([
+            // GUNAKAN QUERY BUILDER LANGSUNG (Bypass Eloquent Cache)
+            \Illuminate\Support\Facades\DB::table('attendance_sessions')
+                ->where('id', $this->sessionId)
+                ->update([
                     'current_token' => $newToken,
                     'expires_at' => $expiresAt,
                     'last_rotated_at' => now('Asia/Jakarta'),
                 ]);
 
-                broadcast(new AttendanceTokenUpdated(
-                    $session,
-                    $newToken,
-                    $expiresAt->toDateTimeString()
-                ));
-            });
+            // Ambil data terbaru untuk broadcast
+            $freshSession = AttendanceSession::find($this->sessionId);
+
+            broadcast(new AttendanceTokenUpdated(
+                $freshSession,
+                $newToken,
+                $expiresAt->toDateTimeString()
+            ));
+
         } catch (\Exception $e) {
             Log::error("Failed to rotate token for session {$this->sessionId}: " . $e->getMessage());
         }

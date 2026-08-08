@@ -15,7 +15,9 @@ class ScanAttendance extends Page
 
     protected static ?string $title = 'Absensi Magang';
 
-    protected static ?string $navigationGroup = 'ALUR PELAKSANAAN PKL';
+    protected static ?string $navigationGroup = 'PRESENSI';
+
+    protected static ?int $navigationSort = 1;
 
     public static function shouldRegisterNavigation(): bool
     {

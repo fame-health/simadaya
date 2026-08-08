@@ -8,4 +8,11 @@ use Filament\Resources\Pages\ListRecords;
 class ListAttendanceLogs extends ListRecords
 {
     protected static string $resource = AttendanceLogResource::class;
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            AttendanceLogResource\Widgets\AttendanceStatsOverview::class,
+        ];
+    }
 }

@@ -10,8 +10,15 @@ use Livewire\Component;
 class QRScanner extends Component
 {
     public $message = '';
-    public $status = ''; // success, error
+    public $status = ''; // success, error, scanning
     public bool $hasAttendedToday = false;
+
+    public function resetScanner()
+    {
+        $this->status = '';
+        $this->message = '';
+        $this->dispatch('scanner-reset');
+    }
 
     public function mount()
     {
@@ -32,6 +39,8 @@ class QRScanner extends Component
 
     public function processResult($qrData)
     {
+        $this->status = 'scanning';
+
         try {
             $data = json_decode($qrData, true);
 

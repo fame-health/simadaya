@@ -71,6 +71,57 @@ class FinalLaporanResource extends Resource
 
         return $form
             ->schema([
+                Forms\Components\Section::make()
+                    ->visible($isMahasiswa)
+                    ->compact()
+                    ->schema([
+                        Forms\Components\Placeholder::make('status_info')
+                            ->label('')
+                            ->content(function ($record) {
+                                if (!$record) return null;
+
+                                if ($record->final_laporan && !$record->sertifikat) {
+                                    return new HtmlString('
+                                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; color: #92400e; background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                                            <div style="flex-shrink: 0; padding: 4px; background-color: #fde68a; border-radius: 9999px; display: flex;">
+                                                <svg style="width: 16px; height: 16px; color: #d97706;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            </div>
+                                            <div style="display: flex; flex-direction: column; text-align: left;">
+                                                <span style="font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.8;">Status Laporan</span>
+                                                <span style="font-size: 14px; font-weight: 600;">Laporan Terkirim. Menunggu Verifikasi & Sertifikat.</span>
+                                            </div>
+                                        </div>
+                                    ');
+                                }
+
+                                if ($record->sertifikat) {
+                                    return new HtmlString('
+                                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; color: #065f46; background-color: #d1fae5; border: 1px solid #a7f3d0; border-radius: 8px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                                            <div style="flex-shrink: 0; padding: 4px; background-color: #a7f3d0; border-radius: 9999px; display: flex;">
+                                                <svg style="width: 16px; height: 16px; color: #059669;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            </div>
+                                            <div style="display: flex; flex-direction: column; text-align: left;">
+                                                <span style="font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.8;">Status Magang</span>
+                                                <span style="font-size: 14px; font-weight: 600;">Selesai! Sertifikat sudah terbit.</span>
+                                            </div>
+                                        </div>
+                                    ');
+                                }
+
+                                return new HtmlString('
+                                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; color: #1e40af; background-color: #dbeafe; border: 1px solid #bfdbfe; border-radius: 8px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                                        <div style="flex-shrink: 0; padding: 4px; background-color: #bfdbfe; border-radius: 9999px; display: flex;">
+                                            <svg style="width: 16px; height: 16px; color: #2563eb;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; text-align: left;">
+                                            <span style="font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.8;">Instruksi</span>
+                                            <span style="font-size: 14px; font-weight: 600;">Silakan unggah laporan akhir magang Anda (PDF).</span>
+                                        </div>
+                                    </div>
+                                ');
+                            }),
+                    ]),
+
                 Forms\Components\Section::make('Informasi Pengajuan')
                     ->schema([
                         Forms\Components\Select::make('mahasiswa_id')
@@ -104,15 +155,18 @@ class FinalLaporanResource extends Resource
                             ->label('Status Pengajuan')
                             ->disabled(),
                     ])
-                    ->columns(3),
+                    ->columns(3)
+                    ->visible(!$isMahasiswa),
 
                 Forms\Components\Section::make('Laporan Akhir')
-                    ->description('Silakan unggah laporan akhir magang Anda dalam format PDF.')
+                    ->description('Silakan unggah laporan akhir magang Anda.')
                     ->schema([
                         Forms\Components\FileUpload::make('final_laporan')
                             ->label('File Laporan Akhir')
                             ->directory('pengajuan-magang/laporan')
                             ->acceptedFileTypes(['application/pdf'])
+                            ->maxSize(2048) // 2MB
+                            ->helperText('Format file wajib PDF dengan ukuran maksimal 2MB.')
                             ->visible($isMahasiswa || $isAdmin)
                             ->disabled(fn ($record) => !$record || !$record->isDiterima() || ($record->final_laporan && $isMahasiswa))
                             ->required(fn ($record) => $record instanceof PengajuanMagang && $isMahasiswa && $record->isDiterima() && !$record->final_laporan)
@@ -516,8 +570,11 @@ class FinalLaporanResource extends Resource
         if ($user->role === 'admin') {
             return true;
         }
+
         if ($user->role === 'mahasiswa' && $user->mahasiswa) {
-            return $record->mahasiswa_id === $user->mahasiswa->id && $record->isDiterima() && !$record->final_laporan;
+            // Mahasiswa bisa akses halaman edit (view mereka) jika statusnya Diterima atau Selesai
+            return $record->mahasiswa_id === $user->mahasiswa->id &&
+                   in_array($record->status, [PengajuanMagang::STATUS_DITERIMA, PengajuanMagang::STATUS_SELESAI]);
         }
         return false;
     }

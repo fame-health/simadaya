@@ -19,6 +19,8 @@ class AttendanceLog extends Model
         'ip_address',
         'device_hash',
         'status',
+        'document_path',
+        'reason',
         'failure_reason',
     ];
 

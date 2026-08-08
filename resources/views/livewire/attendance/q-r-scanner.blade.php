@@ -7,7 +7,47 @@
         </div>
 
         <div class="p-6">
-            @if(!$hasAttendedToday)
+            @if($status === 'scanning')
+                {{-- Loading State --}}
+                <div class="flex flex-col items-center justify-center py-12">
+                    <div class="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p class="text-gray-600 font-medium">Memproses Absensi...</p>
+                </div>
+            @elseif($status === 'success')
+                {{-- Success State --}}
+                <div class="flex flex-col items-center text-center py-6">
+                    <div class="w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-6">
+                        <svg class="w-10 h-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Presensi Berhasil!</h3>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm mb-8">{{ $message }}</p>
+
+                    <a href="{{ \App\Filament\Resources\AttendanceLogResource::getUrl('index') }}"
+                       class="w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-3 rounded-xl font-bold transition-transform active:scale-95 shadow-lg mb-3">
+                        Lihat Riwayat Absensi
+                    </a>
+                </div>
+            @elseif($status === 'error')
+                {{-- Error State --}}
+                <div class="flex flex-col items-center text-center py-6">
+                    <div class="w-20 h-20 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mb-6">
+                        <svg class="w-10 h-10 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Presensi Gagal</h3>
+                    <p class="text-red-600 dark:text-red-400 text-sm mb-8 font-medium">{{ $message }}</p>
+
+                    <button wire:click="resetScanner"
+                       class="w-full bg-primary-600 text-white py-3 rounded-xl font-bold transition-transform active:scale-95 shadow-lg">
+                        Ulangi Scan
+                    </button>
+                </div>
+            @elseif(!$hasAttendedToday)
                 {{-- Instructional Text --}}
                 <div class="mb-6 text-center">
                     <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Arahkan kamera ke QR Code yang disediakan oleh pembimbing Anda.</p>
@@ -30,40 +70,15 @@
                     {{-- Scanning Line Animation --}}
                     <div class="absolute top-0 left-0 w-full h-1 bg-primary-500/50 blur-[2px] z-30 animate-scan-line"></div>
                 </div>
-
-                {{-- Error Alerts --}}
-                @if ($status === 'error')
-                    <div class="mt-4 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 rounded-lg flex items-center gap-3">
-                        <div class="flex-shrink-0 text-red-600">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
-                        </div>
-                        <p class="text-xs font-bold text-red-800 dark:text-red-200">{{ $message }}</p>
-                    </div>
-                @endif
-
-            @else
-                {{-- Success State --}}
-                <div class="flex flex-col items-center text-center py-6">
-                    <div class="w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-6">
-                        <svg class="w-10 h-10 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Presensi Berhasil!</h3>
-                    <p class="text-gray-500 dark:text-gray-400 text-sm mb-8">Anda sudah tercatat hadir untuk hari ini.</p>
-
-                    <a href="{{ \App\Filament\Resources\AttendanceLogResource::getUrl('index') }}"
-                       class="w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-3 rounded-xl font-bold transition-transform active:scale-95 shadow-lg">
-                        Lihat Riwayat Absensi
-                    </a>
-                </div>
             @endif
         </div>
     </div>
 
     {{-- Footer Label --}}
-    <div class="mt-6 text-center">
+    <div class="mt-6 text-center flex flex-col gap-2">
+        <a href="{{ \App\Filament\Resources\AttendanceLogResource::getUrl('index') }}" class="text-xs font-bold text-primary-600 hover:text-primary-500 underline decoration-dotted">
+            Tidak bisa hadir? Klik di sini untuk Ajukan Izin/Sakit
+        </a>
         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">SIMADAYA APP v2.1</span>
     </div>
 
@@ -83,7 +98,7 @@
     @if(!$hasAttendedToday)
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
-        document.addEventListener('livewire:initialized', () => {
+        function startScanner() {
             const html5QrCode = new Html5Qrcode("reader");
             const config = {
                 fps: 20,
@@ -102,6 +117,16 @@
                 }
             ).catch(err => {
                 console.error("Camera error:", err);
+            });
+        }
+
+        document.addEventListener('livewire:initialized', () => {
+            startScanner();
+
+            @this.on('scanner-reset', () => {
+                setTimeout(() => {
+                    startScanner();
+                }, 100);
             });
         });
     </script>

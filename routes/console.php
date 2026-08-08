@@ -16,7 +16,9 @@ Schedule::call(function () {
     $activeSessions = AttendanceSession::where('status', 'active')->get();
 
     foreach ($activeSessions as $session) {
-        RotateAttendanceTokenJob::dispatch($session->id);
+        // Menggunakan dispatchSync agar langsung dieksekusi saat itu juga
+        // Tanpa menunggu antrean (queue), cocok untuk shared hosting
+        RotateAttendanceTokenJob::dispatchSync($session->id);
     }
 })->everyTenSeconds();
 

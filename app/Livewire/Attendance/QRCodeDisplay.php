@@ -37,8 +37,13 @@ class QRCodeDisplay extends Component
         // 1. Ambil data sesi terbaru dari database untuk sinkronisasi
         $this->session->refresh();
 
-        // 2. Cek apakah token di database SUDAH BERUBAH
-        // Kita bandingkan token di memori ($this->token) dengan yang ada di DB
+        // 2. Jika sesi sudah tidak aktif, hentikan countdown di 0
+        if ($this->session->status !== 'active') {
+            $this->countdown = 0;
+            return;
+        }
+
+        // 3. Cek apakah token di database SUDAH BERUBAH
         if ($this->session->current_token !== $this->token && !empty($this->session->current_token)) {
             // JIKA BERUBAH: Update state di frontend dan reset countdown ke 10
             $this->token = $this->session->current_token;
@@ -50,7 +55,6 @@ class QRCodeDisplay extends Component
             if ($this->countdown > 0) {
                 $this->countdown--;
             } else {
-                // Jika sudah 0, tetap di 0 sambil menunggu Cron Job/Command mengupdate database
                 $this->countdown = 0;
             }
         }
@@ -58,6 +62,9 @@ class QRCodeDisplay extends Component
 
     public function render()
     {
+        // Paksa refresh data session setiap kali polling/render ulang
+        $this->session->refresh();
+
         return view('livewire.attendance.q-r-code-display');
     }
 }

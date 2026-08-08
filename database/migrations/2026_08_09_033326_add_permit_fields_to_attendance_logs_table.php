@@ -11,11 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('attendance_logs', function (Blueprint $blueprint) {
-            // Status: present (hadir), sick (sakit), permit (izin)
-            $blueprint->string('status')->default('present')->after('token');
-            $blueprint->string('document_path')->nullable()->after('status');
-            $blueprint->text('reason')->nullable()->after('document_path');
+        Schema::table('attendance_logs', function (Blueprint $table) {
+            if (!Schema::hasColumn('attendance_logs', 'status')) {
+                $table->string('status')->default('present')->after('token');
+            }
+
+            if (!Schema::hasColumn('attendance_logs', 'document_path')) {
+                $table->string('document_path')->nullable()->after('status');
+            }
+
+            if (!Schema::hasColumn('attendance_logs', 'reason')) {
+                $table->text('reason')->nullable()->after('document_path');
+            }
         });
     }
 
@@ -24,8 +31,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('attendance_logs', function (Blueprint $blueprint) {
-            $blueprint->dropColumn(['status', 'document_path', 'reason']);
+        Schema::table('attendance_logs', function (Blueprint $table) {
+            $table->dropColumn(['status', 'document_path', 'reason']);
         });
     }
 };

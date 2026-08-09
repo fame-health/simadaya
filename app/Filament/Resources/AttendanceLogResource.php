@@ -22,6 +22,12 @@ use Illuminate\Database\Eloquent\Builder;
 use App\Models\Pembimbing;
 use Filament\Tables\Columns\Summarizers\Count;
 
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Section as InfoSection;
+use Filament\Infolists\Components\IconEntry;
+
 class AttendanceLogResource extends Resource
 {
     protected static ?string $model = AttendanceLog::class;
@@ -145,7 +151,10 @@ class AttendanceLogResource extends Resource
                             ->label('Upload Surat (PDF/Foto)')
                             ->directory('attendance-permits')
                             ->visibility('public')
-                            ->required(),
+                            ->required(false)
+                            ->helperText('Maksimal 2MB. Format: PDF, JPG, PNG.')
+                            ->maxSize(2048)
+                            ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png']),
                     ])
                     ->action(function (array $data) {
                         $student = Auth::user()->mahasiswa;
@@ -183,6 +192,71 @@ class AttendanceLogResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ]);
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                InfoSection::make('Detail Absensi')
+                    ->schema([
+                        TextEntry::make('student.user.name')
+                            ->label('Nama Peserta'),
+                        TextEntry::make('session.session_name')
+                            ->label('Sesi Pertemuan')
+                            ->placeholder('Input Manual'),
+                        TextEntry::make('scan_time')
+                            ->label('Waktu Presensi')
+                            ->dateTime(),
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'present' => 'success',
+                                'permit' => 'warning',
+                                'sick' => 'danger',
+                                default => 'gray',
+                            })
+                            ->formatStateUsing(fn (string $state): string => match ($state) {
+                                'present' => 'HADIR',
+                                'permit' => 'IZIN',
+                                'sick' => 'SAKIT',
+                                default => strtoupper($state),
+                            }),
+                        TextEntry::make('reason')
+                            ->label('Alasan / Keterangan')
+                            ->placeholder('Tidak ada keterangan')
+                            ->columnSpanFull(),
+                    ])->columns(2),
+
+                InfoSection::make('Dokumen Pendukung')
+                    ->schema([
+                        TextEntry::make('document_path')
+                            ->label('Nama File')
+                            ->placeholder('Tidak ada file diunggah'),
+                        ImageEntry::make('document_path')
+                            ->label('Pratinjau Gambar')
+                            ->visibility('public')
+                            ->width(400)
+                            ->height(400)
+                            ->hidden(fn ($record) => !$record->document_path || !in_array(pathinfo($record->document_path, PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png'])),
+                        TextEntry::make('view_document')
+                            ->label('Dokumen PDF')
+                            ->default('Buka PDF')
+                            ->url(fn ($record) => asset('storage/' . $record->document_path), true)
+                            ->hidden(fn ($record) => !$record->document_path || pathinfo($record->document_path, PATHINFO_EXTENSION) !== 'pdf'),
+                    ])
+                    ->hidden(fn ($record) => $record->status === 'present'),
+
+                InfoSection::make('Informasi Teknis')
+                    ->schema([
+                        TextEntry::make('ip_address')
+                            ->label('Alamat IP'),
+                        TextEntry::make('browser')
+                            ->label('Browser/Perangkat'),
+                    ])->columns(2)
+                    ->collapsed(),
             ]);
     }
 

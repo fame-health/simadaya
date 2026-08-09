@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Mahasiswa;
 use App\Models\PengajuanMagang;
 use App\Models\Penilaian;
+use App\Models\AttendanceLog;
+use Carbon\Carbon;
 
 class ProgressSteps extends Widget
 {
@@ -272,6 +274,20 @@ class ProgressSteps extends Widget
         }
 
         return $this->finalizeSteps($steps);
+    }
+
+    public function getAttendanceStatus(): string
+    {
+        $user = Auth::user();
+        if (!$user || !$user->mahasiswa) {
+            return 'Belum Absen';
+        }
+
+        $hasAttended = AttendanceLog::where('student_id', $user->mahasiswa->id)
+            ->whereDate('scan_time', Carbon::today())
+            ->exists();
+
+        return $hasAttended ? 'Sudah Absen' : 'Belum Absen';
     }
 
     private function finalizeSteps(array $steps): array

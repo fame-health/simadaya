@@ -34,17 +34,43 @@
         header.fi-header > h1 {
             display: none !important;
         }
-        /* Kurangi ruang kosong di bagian atas */
-        header.fi-header {
-            padding-bottom: 0 !important;
-            margin-bottom: 0 !important;
+
+        /* Pastikan Topbar tetap menempel (Sticky) saat scroll agar profil tetap terlihat */
+        .fi-topbar {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 40 !important;
+            background-color: rgb(255 255 255 / 0.8) !important;
+            backdrop-filter: blur(8px) !important;
+            border-bottom: 1px solid rgb(229 231 235 / 0.5) !important;
         }
-        main.fi-main,
-        .fi-main-ctn {
-            padding-top: 0.5rem !important;
+
+        .dark .fi-topbar {
+            background-color: rgb(17 24 39 / 0.8) !important;
+            border-bottom-color: rgb(55 65 81 / 0.5) !important;
+        }
+
+        /* Paksa container utama naik ke paling atas */
+        main.fi-main {
+            padding-top: 0 !important;
+            margin-top: -2rem !important; /* Tarik paksa ke atas */
+        }
+
+        /* Hilangkan semua ruang pada header */
+        header.fi-header,
+        .fi-header-ctn {
+            display: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Hilangkan padding pada pembungkus widget agar kartu benar-benar menempel */
+        .fi-wi-progress-steps {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
         }
     </style>
-    <x-filament::section class="p-0 overflow-hidden ring-1 ring-gray-950/5 dark:ring-white/10">
+    <x-filament::section class="p-0 overflow-hidden ring-1 ring-gray-950/5 dark:ring-white/10" style="border-radius: 0 !important;">
         <div class="flex flex-col md:flex-row min-h-[350px]">
 
             {{-- ================================================= --}}
@@ -184,16 +210,32 @@
                         {{-- Tombol Absensi di Atas (Hanya muncul jika sudah Diterima) --}}
                         @if($pengajuan && $pengajuan->status === \App\Models\PengajuanMagang::STATUS_DITERIMA)
                             <div class="mb-5">
-                                <x-filament::button
-                                    tag="a"
-                                    href="{{ \App\Filament\Pages\ScanAttendance::getUrl() }}"
-                                    icon="heroicon-m-qr-code"
-                                    color="success"
-                                    size="lg"
-                                    class="w-full shadow-lg shadow-green-500/20 hover:scale-[1.01] transition-all"
-                                >
-                                    Absensi Sekarang
-                                </x-filament::button>
+                                @php
+                                    $attStatus = $this->getAttendanceStatus();
+                                    $isAlreadyAttended = ($attStatus === 'Sudah Absen');
+                                @endphp
+
+                                <div class="flex flex-col gap-2">
+                                    <div class="flex items-center justify-between px-1">
+                                        <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Absensi Hari Ini</span>
+                                        <span class="text-[10px] font-extrabold {{ $isAlreadyAttended ? 'text-green-600' : 'text-red-600' }} uppercase tracking-widest">
+                                            {{ $attStatus }}
+                                        </span>
+                                    </div>
+
+                                    <x-filament::button
+                                        tag="a"
+                                        href="{{ \App\Filament\Pages\ScanAttendance::getUrl() }}"
+                                        icon="heroicon-m-qr-code"
+                                        color="{{ $isAlreadyAttended ? 'gray' : 'success' }}"
+                                        size="lg"
+                                        class="w-full shadow-lg {{ $isAlreadyAttended ? '' : 'shadow-green-500/20' }} hover:scale-[1.01] transition-all"
+                                        :disabled="$isAlreadyAttended"
+                                    >
+                                        {{ $isAlreadyAttended ? 'Sudah Melakukan Absensi' : 'Absensi Sekarang' }}
+                                    </x-filament::button>
+                                </div>
+
                                 <div class="mt-2 flex items-center justify-center gap-2">
                                     <span class="relative flex h-2 w-2">
                                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>

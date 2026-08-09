@@ -77,7 +77,7 @@
             .presence-panel { background: white; border-radius: 1rem; padding: 1.25rem; border: 1px solid #e5e7eb; }
             .dark .presence-panel { background: #111827; border-color: #374151; }
 
-            .presence-row { display: grid; grid-template-columns: repeat(3, 1fr); margin: 1.25rem 0; text-align: center; gap: 0.5rem; }
+            .presence-row { display: grid; grid-template-columns: repeat(4, 1fr); margin: 1.25rem 0; text-align: center; gap: 0.5rem; }
             .presence-item p:first-child { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; color: #6b7280; }
             .presence-item p:last-child { font-size: 1.75rem; font-weight: 800; }
 
@@ -197,6 +197,10 @@
                         <div class="presence-item">
                             <p style="color: #059669;">Total Hadir</p>
                             <p style="color: #059669;">{{ $data['present_today'] }}</p>
+                        </div>
+                        <div class="presence-item">
+                            <p style="color: #eab308;">Izin / Sakit</p>
+                            <p style="color: #eab308;">{{ $data['permit_sick_today'] }}</p>
                         </div>
                         <div class="presence-item">
                             <p style="color: #dc2626;">Tdk Hadir</p>

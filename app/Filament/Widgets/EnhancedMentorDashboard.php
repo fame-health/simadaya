@@ -70,27 +70,38 @@ class EnhancedMentorDashboard extends Widget
             }
         }
 
-        // Attendance Stats - Filtered for only Accepted Students
-        $activeSessions = AttendanceSession::where('status', 'active')->count();
-        $todayAttendance = AttendanceLog::whereDate('scan_time', now()->toDateString())->count();
+        // Attendance Stats - Filtered for only Accepted Students for Today
+        $todayDate = now()->toDateString();
 
-        // Count only students who have an ACCEPTED (DITERIMA) internship status
+        // Count only 'present' status for 'Total Hadir'
+        $presentToday = AttendanceLog::whereDate('scan_time', $todayDate)
+            ->where('status', 'present')
+            ->count();
+
+        // Count 'permit' and 'sick' status
+        $permitSickToday = AttendanceLog::whereDate('scan_time', $todayDate)
+            ->whereIn('status', ['permit', 'sick'])
+            ->count();
+
+        // Count only students who have an ACCEPTED (DITERIMA) internship status active today
         $acceptedStudentsCount = PengajuanMagang::where('status', PengajuanMagang::STATUS_DITERIMA)
             ->where('tanggal_mulai', '<=', $now)
             ->where('tanggal_selesai', '>=', $now)
             ->distinct('mahasiswa_id')
             ->count('mahasiswa_id');
 
-        $notPresent = max(0, $acceptedStudentsCount - $todayAttendance);
+        // Not present = Total students expected - (Present + Permit + Sick)
+        $notPresent = max(0, $acceptedStudentsCount - ($presentToday + $permitSickToday));
 
         return [
             'pending' => $pendingCount,
             'active' => $activeCount,
             'completed' => $completedCount,
             'total' => $totalBimbingan,
-            'active_sessions' => $activeSessions,
-            'present_today' => $todayAttendance,
+            'active_sessions' => AttendanceSession::where('status', 'active')->count(),
+            'present_today' => $presentToday,
             'not_present' => $notPresent,
+            'permit_sick_today' => $permitSickToday, // Useful for the view if needed
             'user_name' => $user->name,
             'role' => $user->role,
             'is_admin' => $user->isAdmin(),

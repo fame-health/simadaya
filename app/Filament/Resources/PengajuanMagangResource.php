@@ -152,11 +152,15 @@ class PengajuanMagangResource extends Resource
                         Forms\Components\FileUpload::make('surat_permohonan')
                             ->required()
                             ->acceptedFileTypes(['application/pdf'])
+                            ->maxSize(2048)
+                            ->helperText('Hanya file PDF (Maks. 2MB)')
                             ->directory('pengajuan-magang/surat-permohonan')
                             ->disabled(!$isAdmin && !$isMahasiswa),
                         Forms\Components\FileUpload::make('ktm')
                             ->required()
-                            ->acceptedFileTypes(['application/pdf', 'image/*'])
+                            ->acceptedFileTypes(['application/pdf', 'image/jpeg', 'image/png'])
+                            ->maxSize(2048)
+                            ->helperText('File PDF, JPG, atau PNG (Maks. 2MB)')
                             ->directory('pengajuan-magang/ktm')
                             ->disabled(!$isAdmin && !$isMahasiswa),
                         Forms\Components\DatePicker::make('tanggal_mulai')
@@ -258,7 +262,7 @@ class PengajuanMagangResource extends Resource
         $isPembimbing = $user->role === 'pembimbing';
 
         return $table
-
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('mahasiswa.nim')
                     ->label('NIM')

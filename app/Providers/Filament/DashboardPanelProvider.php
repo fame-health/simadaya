@@ -39,6 +39,11 @@ class DashboardPanelProvider extends PanelProvider
                 Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            ->navigationGroups([
+                'PRESENSI',
+                'ALUR PELAKSANAAN PKL',
+                'SETTING',
+            ])
             ->widgets([
                 \App\Filament\Widgets\EnhancedMentorDashboard::class,
             ])

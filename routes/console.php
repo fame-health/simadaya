@@ -22,3 +22,6 @@ Schedule::call(function () {
     }
 })->everyTenSeconds();
 
+// Verifikasi Laporan Akhir otomatis setiap minggu
+Schedule::command('app:auto-verify-laporan')->weekly();
+

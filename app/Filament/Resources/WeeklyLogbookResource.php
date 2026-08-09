@@ -149,13 +149,24 @@ class WeeklyLogbookResource extends Resource
                                             ->label('Mulai')
                                             ->required()
                                             ->native(false)
-                                            ->disabled($isPembimbing || $isView),
+                                            ->disabled($isPembimbing || $isView)
+                                            ->default(now())
+                                            ->reactive()
+                                            ->afterStateUpdated(function ($state, callable $set) {
+                                                if ($state) {
+                                                    $date = \Illuminate\Support\Carbon::parse($state);
+                                                    $set('end_date', $date->addDays(6)->format('Y-m-d'));
+                                                }
+                                            }),
 
                                         Forms\Components\DatePicker::make('end_date')
                                             ->label('Selesai')
                                             ->required()
                                             ->native(false)
-                                            ->disabled($isPembimbing || $isView),
+                                            ->disabled($isPembimbing || $isView)
+                                            ->default(fn ($get) => $get('start_date')
+                                                ? \Illuminate\Support\Carbon::parse($get('start_date'))->addDays(6)->format('Y-m-d')
+                                                : now()->addDays(6)->format('Y-m-d')),
                                     ])->compact(),
 
                                 Forms\Components\Section::make('📎 Lampiran')

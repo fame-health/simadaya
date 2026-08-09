@@ -431,41 +431,32 @@ class FinalLaporanResource extends Resource
             })
             ->columns([
                 Tables\Columns\TextColumn::make('mahasiswa.user.name')
-                    ->label('Mahasiswa')
+                    ->label('Nama Mahasiswa')
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('pembimbing.user.name')
-                    ->label('Pembimbing')
-                    ->sortable()
-                    ->searchable()
-                    ->visible($isAdmin),
-                Tables\Columns\TextColumn::make('bidang_diminati')
-                    ->label('Bidang Diminati')
-                    ->sortable()
+                Tables\Columns\TextColumn::make('mahasiswa.nim')
+                    ->label('NIM')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('durasi_magang')
-                    ->label('Durasi Magang')
-                    ->suffix(' minggu')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('status')
-                    ->label('Status Pengajuan')
+                    ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        PengajuanMagang::STATUS_PENDING => 'warning',
                         PengajuanMagang::STATUS_DITERIMA => 'success',
-                        PengajuanMagang::STATUS_DITOLAK => 'danger',
                         PengajuanMagang::STATUS_SELESAI => 'info',
                     })
                     ->sortable(),
-                Tables\Columns\TextColumn::make('final_laporan')
-                    ->label('Laporan Akhir')
-                    ->formatStateUsing(fn ($state) => $state ? 'Sudah Diupload' : 'Belum Diupload')
+                Tables\Columns\IconColumn::make('final_laporan')
+                    ->label('Laporan')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-circle')
+                    ->falseIcon('heroicon-o-x-circle')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('sertifikat')
+                Tables\Columns\IconColumn::make('sertifikat')
                     ->label('Sertifikat')
-                    ->formatStateUsing(fn ($state) => $state ? 'Sudah Diupload' : 'Belum Diupload')
-                    ->sortable()
-                    ->visible($isAdmin || fn ($record) => $record->sertifikat),
+                    ->boolean()
+                    ->trueIcon('heroicon-o-check-badge')
+                    ->falseIcon('heroicon-o-clock')
+                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')

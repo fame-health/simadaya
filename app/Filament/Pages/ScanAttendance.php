@@ -17,7 +17,7 @@ class ScanAttendance extends Page
 
     protected static ?string $navigationGroup = 'PRESENSI';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 3;
 
     public static function shouldRegisterNavigation(): bool
     {

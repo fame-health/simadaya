@@ -27,7 +27,8 @@ class TemplateSuratResource extends Resource
     protected static ?string $model = TemplateSurat::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
-    protected static ?string $navigationGroup = 'Manajemen Surat';
+    protected static ?string $navigationGroup = 'SETTING';
+    protected static ?int $navigationSort = 1;
     protected static ?string $navigationLabel = 'Template Surat';
     protected static ?string $pluralLabel = 'Template Surat';
 

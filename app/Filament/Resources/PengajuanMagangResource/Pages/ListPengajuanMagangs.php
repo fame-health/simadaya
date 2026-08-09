@@ -14,6 +14,11 @@ class ListPengajuanMagangs extends ListRecords
 {
     protected static string $resource = PengajuanMagangResource::class;
 
+    public function getDefaultActiveTab(): string | int | null
+    {
+        return 'pending';
+    }
+
     protected function getHeaderActions(): array
     {
         return [

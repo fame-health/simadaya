@@ -18,9 +18,9 @@ class AttendanceSessionResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static ?string $navigationGroup = 'ABSENSI & LOGBOOK';
+    protected static ?string $navigationGroup = 'PRESENSI';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $label = 'Sesi Absensi';
 
@@ -54,6 +54,7 @@ class AttendanceSessionResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('session_name')
                     ->searchable()

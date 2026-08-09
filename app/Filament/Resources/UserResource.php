@@ -26,7 +26,9 @@ class UserResource extends Resource
 
     protected static ?string $modelLabel = 'Akun Penguna';
 
-    protected static ?string $navigationGroup = 'Manajemen User';
+    protected static ?string $navigationGroup = 'SETTING';
+
+    protected static ?int $navigationSort = 2;
 
     public static function shouldRegisterNavigation(): bool
     {

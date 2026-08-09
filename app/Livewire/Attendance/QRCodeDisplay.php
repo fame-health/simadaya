@@ -11,15 +11,15 @@ class QRCodeDisplay extends Component
 {
     public AttendanceSession $session;
     public string $qrCode;
-    public string $token;
-    public string $expiredAt;
+    public ?string $token = null;
+    public ?string $expiredAt = null;
     public int $countdown = 10;
 
     public function mount(AttendanceSession $session, QRCodeService $qrCodeService)
     {
         $this->session = $session;
-        $this->token = $session->current_token;
-        $this->expiredAt = $session->expires_at->toDateTimeString();
+        $this->token = $session->current_token ?? '';
+        $this->expiredAt = $session->expires_at ? $session->expires_at->toDateTimeString() : now()->toDateTimeString();
         $this->generateQRCode($qrCodeService);
     }
 

@@ -22,7 +22,7 @@ class AttendanceSessionResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $label = 'Sesi Absensi';
+    protected static ?string $label = 'Sesi Presensi';
 
     public static function shouldRegisterNavigation(): bool
     {

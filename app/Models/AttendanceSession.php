@@ -11,6 +11,9 @@ class AttendanceSession extends Model
 {
     use HasFactory;
 
+    const STATUS_ACTIVE = 'active';
+    const STATUS_ENDED = 'ended';
+
     protected $fillable = [
         'mentor_id',
         'location_id',

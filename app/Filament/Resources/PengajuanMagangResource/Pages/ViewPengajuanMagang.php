@@ -89,6 +89,8 @@ class ViewPengajuanMagang extends ViewRecord
 
                     if ($data['status'] === PengajuanMagang::STATUS_DITERIMA) {
                         $record->pembimbing_id = $data['pembimbing_id'] ?? null;
+                        $record->save();
+                        $record->load(['mahasiswa.user', 'pembimbing.user']);
 
                         // --- 1. Generate QR Code ---
                         $validationUrl = url('/validate-internship/' . $record->id);
@@ -102,16 +104,30 @@ class ViewPengajuanMagang extends ViewRecord
                         // --- 2. Generate Surat Balasan ---
                         $templateSurat = TemplateSurat::where('jenis_surat', TemplateSurat::JENIS_PENERIMAAN)
                             ->where('is_active', true)
-                            ->firstOrFail();
+                            ->first();
+
+                        if (!$templateSurat) {
+                            $templateFileContent = file_exists(resource_path('views/templates/surat_penerimaan.blade.php'))
+                                ? file_get_contents(resource_path('views/templates/surat_penerimaan.blade.php'))
+                                : '<h1>Surat Penerimaan Magang</h1>';
+
+                            $templateSurat = TemplateSurat::create([
+                                'nama_template' => 'Template Penerimaan Magang (Default)',
+                                'jenis_surat' => TemplateSurat::JENIS_PENERIMAAN,
+                                'content_template' => $templateFileContent,
+                                'is_active' => true,
+                                'created_by' => $user->id,
+                            ]);
+                        }
 
                         $nimAkhir    = substr($record->mahasiswa->nim, -3);
                         $tahun       = now()->format('Y');
-                        $nomerSurat  = $templateSurat->nomer_surat . '/' . $nimAkhir . '/' . $tahun;
+                        $nomerSurat  = ($templateSurat->nomer_surat ?? '001/SIMADAYA') . '/' . $nimAkhir . '/' . $tahun;
 
                         $pdfDataSurat = [
                             'mahasiswa_name'     => $record->mahasiswa->user->name,
                             'nim'                => $record->mahasiswa->nim,
-                            'pembimbing_name'    => $record->pembimbing?->user->name ?? '-',
+                            'pembimbing_name'    => $record->pembimbing?->user?->name ?? '-',
                             'tanggal_mulai'      => Carbon::parse($record->tanggal_mulai)->translatedFormat('d F Y'),
                             'tanggal_selesai'    => Carbon::parse($record->tanggal_selesai)->translatedFormat('d F Y'),
                             'bidang_diminati'    => $record->bidang_diminati,
@@ -131,12 +147,10 @@ class ViewPengajuanMagang extends ViewRecord
 
 
                         // --- 3. Generate Kartu Magang (ID Card) ---
-                        // Mengambil path fisik foto profil mahasiswa, jika ada
                         $profilePhotoPathPhysical = $record->mahasiswa->profile_photo_path
                             ? Storage::disk('public')->path($record->mahasiswa->profile_photo_path)
                             : null;
 
-                        // Data untuk Blade View Kartu Magang
                         $idCardData = [
                             'mahasiswa_name'     => $record->mahasiswa->user->name,
                             'nim'                => $record->mahasiswa->nim,
@@ -145,25 +159,24 @@ class ViewPengajuanMagang extends ViewRecord
                             'nomor_hp'           => $record->mahasiswa->nomor_hp ?? '-',
                             'tanggal_mulai'      => Carbon::parse($record->tanggal_mulai)->translatedFormat('d M Y'),
                             'tanggal_selesai'    => Carbon::parse($record->tanggal_selesai)->translatedFormat('d M Y'),
-                            'qr_code_path'       => $qrCodePathPhysical, // Gunakan QR code yang sudah digenerate
-                            'profile_photo_path' => $profilePhotoPathPhysical, // Path fisik foto profil
+                            'qr_code_path'       => $qrCodePathPhysical,
+                            'profile_photo_path' => $profilePhotoPathPhysical,
                         ];
 
-                        // Rendering Blade View: resources/views/pdfs/internship-id-card.blade.php
                         $htmlIdCard = view('pdfs.internship-id-card', $idCardData)->render();
-
-                        // Set ukuran kertas khusus ID Card (contoh ukuran disesuaikan untuk portrait ID card)
-                        // Ukuran A7 landscape (74mm x 105mm) di sini diubah ke satuan DomPDF (poin) untuk ID Card
-                        // Contoh: 85.6mm x 53.98mm (standar CR80) -> ~242 x 153.05 poin
                         $pdfIdCard  = Pdf::loadHTML($htmlIdCard)->setPaper([0, 0, 242, 153.05], 'portrait');
                         $idCardPath = 'pengajuan-magang/id-card/id_card_' . $record->id . '.pdf';
                         Storage::disk('public')->put($idCardPath, $pdfIdCard->output());
                         $record->id_card_path = $idCardPath;
                     }
 
-                    // START: Perbaikan Pengiriman Email - Menggunakan Facade Mail yang telah diimport
-                    Mail::to($record->mahasiswa->user->email)
-                        ->send(new StatusPengajuanMagangMail($record));
+                    // START: Perbaikan Pengiriman Email (dengan error handling)
+                    try {
+                        Mail::to($record->mahasiswa->user->email)
+                            ->send(new StatusPengajuanMagangMail($record));
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning('Gagal mengirim email verifikasi: ' . $e->getMessage());
+                    }
                     // END: Perbaikan Pengiriman Email
 
                     $record->tanggal_verifikasi = now();

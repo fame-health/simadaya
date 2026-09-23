@@ -21,3 +21,8 @@ Route::get('/validate-certificate/{id}', function ($id) {
     $pengajuan = \App\Models\PengajuanMagang::findOrFail($id);
     return view('validate-certificate', ['pengajuan' => $pengajuan]);
 })->name('validate-certificate');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard/riwayat-absensi/pdf', [\App\Http\Controllers\RiwayatAbsensiPdfController::class, 'download'])
+        ->name('riwayat-absensi.pdf');
+});

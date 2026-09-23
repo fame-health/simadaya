@@ -95,9 +95,13 @@ class AttendanceService
     {
         $this->ensureCanManage($session, $user);
 
-        return DB::transaction(fn (): AttendanceSession => $this->sessions->end(
+        $endedSession = DB::transaction(fn (): AttendanceSession => $this->sessions->end(
             $this->sessions->lockById($session->id) ?? $session
         ));
+
+        $this->autoGenerateAlphaLogs($endedSession);
+
+        return $endedSession;
     }
 
     public function snapshot(AttendanceSession $session): array
@@ -163,7 +167,8 @@ class AttendanceService
                     }
 
                     if ($session->attendance_end_at && $session->attendance_end_at->lte(now())) {
-                        $this->sessions->end($session);
+                        $endedSession = $this->sessions->end($session);
+                        $this->autoGenerateAlphaLogs($endedSession);
 
                         return null;
                     }
@@ -297,5 +302,80 @@ class AttendanceService
     {
         return (string) $exception->getCode() === '23000'
             || str_contains(strtolower($exception->getMessage()), 'unique');
+    }
+
+    public function autoGenerateAlphaLogs(?AttendanceSession $session = null): int
+    {
+        $createdCount = 0;
+
+        $sessionsToProcess = $session
+            ? collect([$session])
+            : AttendanceSession::query()
+                ->where(function ($q) {
+                    $q->where('status', AttendanceSession::STATUS_ENDED)
+                        ->orWhere(function ($sq) {
+                            $sq->where('status', AttendanceSession::STATUS_ACTIVE)
+                                ->where('attendance_end_at', '<=', now());
+                        });
+                })
+                ->get();
+
+        foreach ($sessionsToProcess as $currentSession) {
+            $sessionDate = $currentSession->session_date ? Carbon::parse($currentSession->session_date)->toDateString() : null;
+
+            $eligibleStudentsQuery = Mahasiswa::query()
+                ->whereHas('pengajuan', function ($q) use ($currentSession, $sessionDate) {
+                    $q->whereIn('status', [
+                        \App\Models\PengajuanMagang::STATUS_DITERIMA,
+                        \App\Models\PengajuanMagang::STATUS_SELESAI,
+                    ]);
+
+                    if ($currentSession->mentor_id) {
+                        $q->where('pembimbing_id', $currentSession->mentor_id);
+                    }
+
+                    if ($sessionDate) {
+                        $q->where('tanggal_mulai', '<=', $sessionDate)
+                          ->where('tanggal_selesai', '>=', $sessionDate);
+                    }
+                });
+
+            $eligibleStudents = $eligibleStudentsQuery->get();
+
+            foreach ($eligibleStudents as $student) {
+                $hasLogForSession = AttendanceLog::query()
+                    ->where('session_id', $currentSession->id)
+                    ->where('student_id', $student->id)
+                    ->exists();
+
+                if (! $hasLogForSession) {
+                    $hasOtherLogOnDate = false;
+                    if ($sessionDate) {
+                        $hasOtherLogOnDate = AttendanceLog::query()
+                            ->where('student_id', $student->id)
+                            ->whereDate('scan_time', $sessionDate)
+                            ->whereIn('status', [
+                                AttendanceLog::STATUS_PRESENT,
+                                AttendanceLog::STATUS_PERMIT,
+                                AttendanceLog::STATUS_SICK,
+                            ])
+                            ->exists();
+                    }
+
+                    if (! $hasOtherLogOnDate) {
+                        AttendanceLog::create([
+                            'session_id' => $currentSession->id,
+                            'student_id' => $student->id,
+                            'scan_time' => $currentSession->attendance_end_at ?? $currentSession->ended_at ?? now(),
+                            'status' => AttendanceLog::STATUS_ALPHA,
+                            'reason' => 'Tanpa Keterangan (Alpa)',
+                        ]);
+                        $createdCount++;
+                    }
+                }
+            }
+        }
+
+        return $createdCount;
     }
 }

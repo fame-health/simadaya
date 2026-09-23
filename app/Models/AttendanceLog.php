@@ -10,6 +10,11 @@ class AttendanceLog extends Model
 {
     use HasFactory;
 
+    const STATUS_PRESENT = 'present';
+    const STATUS_PERMIT = 'permit';
+    const STATUS_SICK = 'sick';
+    const STATUS_ALPHA = 'alpha';
+
     protected $fillable = [
         'session_id',
         'student_id',

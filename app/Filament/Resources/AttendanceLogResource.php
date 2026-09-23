@@ -34,7 +34,11 @@ class AttendanceLogResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
-    protected static ?string $label = 'Log Absensi';
+    protected static ?string $label = 'Riwayat Presensi';
+
+    protected static ?string $pluralModelLabel = 'Riwayat Presensi';
+
+    protected static ?string $navigationLabel = 'Riwayat Presensi';
 
     protected static ?string $navigationGroup = 'PRESENSI';
 
@@ -71,21 +75,35 @@ class AttendanceLogResource extends Resource
     {
         return $table
             ->modifyQueryUsing(function (Builder $query) {
+                // Generasi otomatis log alpa untuk sesi yang telah berakhir
+                app(\App\Services\Attendance\AttendanceService::class)->autoGenerateAlphaLogs();
+
                 $user = Auth::user();
-                if ($user->role === 'mahasiswa') {
+                if ($user->isMahasiswa()) {
                     $query->whereHas('student', function ($q) use ($user) {
                         $q->where('user_id', $user->id);
                     });
-                }
-
-                // Filter berdasarkan mentor jika admin memilih mentor (menggunakan session)
-                if ($user->isAdmin() && session()->has('selected_mentor_id')) {
-                    $query->whereHas('session', function ($q) {
-                        $q->where('mentor_id', session('selected_mentor_id'));
+                } elseif ($user->isPembimbing() && $user->pembimbing) {
+                    $pembimbingId = $user->pembimbing->id;
+                    $query->where(function (Builder $q) use ($pembimbingId) {
+                        $q->whereHas('student.pengajuan', function ($pq) use ($pembimbingId) {
+                            $pq->where('pembimbing_id', $pembimbingId)
+                               ->whereIn('status', [
+                                   \App\Models\PengajuanMagang::STATUS_DITERIMA,
+                                   \App\Models\PengajuanMagang::STATUS_SELESAI,
+                               ]);
+                        })->orWhereHas('session', function ($sq) use ($pembimbingId) {
+                            $sq->where('mentor_id', $pembimbingId);
+                        });
                     });
-                } elseif ($user->isPembimbing()) {
-                    $query->whereHas('session', function ($q) use ($user) {
-                        $q->where('mentor_id', $user->pembimbing->id);
+                } elseif ($user->isAdmin() && session()->has('selected_mentor_id')) {
+                    $mentorId = session('selected_mentor_id');
+                    $query->where(function (Builder $q) use ($mentorId) {
+                        $q->whereHas('student.pengajuan', function ($pq) use ($mentorId) {
+                            $pq->where('pembimbing_id', $mentorId);
+                        })->orWhereHas('session', function ($sq) use ($mentorId) {
+                            $sq->where('mentor_id', $mentorId);
+                        });
                     });
                 }
             })
@@ -97,7 +115,8 @@ class AttendanceLogResource extends Resource
                     ->hidden(fn() => Auth::user()->isMahasiswa()),
                 Tables\Columns\TextColumn::make('session.session_name')
                     ->label('Sesi')
-                    ->sortable(),
+                    ->sortable()
+                    ->placeholder('Izin / Sakit / Alpa'),
                 Tables\Columns\TextColumn::make('scan_time')
                     ->label('Waktu')
                     ->dateTime()
@@ -107,17 +126,19 @@ class AttendanceLogResource extends Resource
                     ->colors([
                         'success' => 'present',
                         'warning' => 'permit',
-                        'danger' => 'sick',
+                        'danger' => ['sick', 'alpha', 'alpa'],
                     ])
                     ->icons([
                         'heroicon-o-check-circle' => 'present',
                         'heroicon-o-document-text' => 'permit',
                         'heroicon-o-exclamation-circle' => 'sick',
+                        'heroicon-o-x-circle' => ['alpha', 'alpa'],
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'present' => 'HADIR',
                         'permit' => 'IZIN',
                         'sick' => 'SAKIT',
+                        'alpha', 'alpa' => 'ALPA',
                         default => strtoupper($state),
                     }),
                 Tables\Columns\TextColumn::make('reason')
@@ -159,8 +180,6 @@ class AttendanceLogResource extends Resource
                     ->action(function (array $data) {
                         $student = Auth::user()->mahasiswa;
 
-                        // Cari atau buat sesi dummy jika perlu, atau biarkan null jika diizinkan
-                        // Disini kita asumsikan mahasiswa menginput tanpa sesi spesifik jika manual
                         AttendanceLog::create([
                             'student_id' => $student->id,
                             'status' => $data['status'],
@@ -168,6 +187,48 @@ class AttendanceLogResource extends Resource
                             'reason' => $data['reason'],
                             'document_path' => $data['document_path'],
                         ]);
+                    }),
+                Action::make('downloadPdf')
+                    ->label('Unduh PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->form(function () {
+                        $user = Auth::user();
+                        if ($user->isMahasiswa()) {
+                            return [
+                                \Filament\Forms\Components\DatePicker::make('start_date')->label('Dari Tanggal'),
+                                \Filament\Forms\Components\DatePicker::make('end_date')->label('Sampai Tanggal'),
+                            ];
+                        }
+
+                        $studentOptions = [];
+                        if ($user->isPembimbing() && $user->pembimbing) {
+                            $studentOptions = \App\Models\Mahasiswa::whereHas('pengajuan', function ($q) use ($user) {
+                                $q->where('pembimbing_id', $user->pembimbing->id)
+                                  ->whereIn('status', [\App\Models\PengajuanMagang::STATUS_DITERIMA, \App\Models\PengajuanMagang::STATUS_SELESAI]);
+                            })->with('user')->get()->pluck('user.name', 'id')->toArray();
+                        } else {
+                            $studentOptions = \App\Models\Mahasiswa::with('user')->get()->pluck('user.name', 'id')->toArray();
+                        }
+
+                        return [
+                            Select::make('student_id')
+                                ->label('Pilih Peserta Magang')
+                                ->options($studentOptions)
+                                ->searchable()
+                                ->required(!$user->isMahasiswa()),
+                            \Filament\Forms\Components\DatePicker::make('start_date')->label('Dari Tanggal'),
+                            \Filament\Forms\Components\DatePicker::make('end_date')->label('Sampai Tanggal'),
+                        ];
+                    })
+                    ->action(function (array $data) {
+                        $params = array_filter([
+                            'student_id' => $data['student_id'] ?? null,
+                            'start_date' => $data['start_date'] ?? null,
+                            'end_date' => $data['end_date'] ?? null,
+                        ]);
+
+                        return redirect()->route('riwayat-absensi.pdf', $params);
                     })
             ])
             ->filters([
@@ -176,6 +237,7 @@ class AttendanceLogResource extends Resource
                         'present' => 'Hadir',
                         'permit' => 'Izin',
                         'sick' => 'Sakit',
+                        'alpha' => 'Alpa',
                     ]),
             ])
             ->actions([
@@ -199,7 +261,7 @@ class AttendanceLogResource extends Resource
     {
         return $infolist
             ->schema([
-                InfoSection::make('Detail Absensi')
+                InfoSection::make('Detail Presensi')
                     ->schema([
                         TextEntry::make('student.user.name')
                             ->label('Nama Peserta'),
@@ -215,13 +277,14 @@ class AttendanceLogResource extends Resource
                             ->color(fn (string $state): string => match ($state) {
                                 'present' => 'success',
                                 'permit' => 'warning',
-                                'sick' => 'danger',
+                                'sick', 'alpha', 'alpa' => 'danger',
                                 default => 'gray',
                             })
                             ->formatStateUsing(fn (string $state): string => match ($state) {
                                 'present' => 'HADIR',
                                 'permit' => 'IZIN',
                                 'sick' => 'SAKIT',
+                                'alpha', 'alpa' => 'ALPA',
                                 default => strtoupper($state),
                             }),
                         TextEntry::make('reason')

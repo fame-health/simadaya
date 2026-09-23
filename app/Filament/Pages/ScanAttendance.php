@@ -9,11 +9,11 @@ class ScanAttendance extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-qr-code';
 
-    protected static ?string $navigationLabel = 'Scan Absensi';
+    protected static ?string $navigationLabel = 'Scan Presensi';
 
     protected static string $view = 'filament.pages.scan-attendance';
 
-    protected static ?string $title = 'Absensi Magang';
+    protected static ?string $title = 'Presensi Magang';
 
     protected static ?string $navigationGroup = 'PRESENSI';
 

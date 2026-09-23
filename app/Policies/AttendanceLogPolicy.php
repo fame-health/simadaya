@@ -14,11 +14,22 @@ class AttendanceLogPolicy
 
     public function view(User $user, AttendanceLog $attendanceLog): bool
     {
-        if ($user->role === 'mahasiswa') {
+        if ($user->isMahasiswa()) {
             return $attendanceLog->student?->user_id === $user->id;
         }
 
-        return $user->isAdmin() || $user->isPembimbing();
+        if ($user->isPembimbing() && $user->pembimbing) {
+            $pembimbingId = $user->pembimbing->id;
+            return $attendanceLog->session?->mentor_id === $pembimbingId
+                || $attendanceLog->student?->pengajuan()
+                    ->where('pembimbing_id', $pembimbingId)
+                    ->whereIn('status', [
+                        \App\Models\PengajuanMagang::STATUS_DITERIMA,
+                        \App\Models\PengajuanMagang::STATUS_SELESAI,
+                    ])->exists();
+        }
+
+        return $user->isAdmin();
     }
 
     public function create(User $user): bool

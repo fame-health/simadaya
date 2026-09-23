@@ -27,7 +27,7 @@
 
                     <a href="{{ \App\Filament\Resources\AttendanceLogResource::getUrl('index') }}"
                        class="w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-3 rounded-xl font-bold transition-transform active:scale-95 shadow-lg mb-3">
-                        Lihat Riwayat Absensi
+                        Lihat Riwayat Presensi
                     </a>
                 </div>
             @elseif($status === 'error')

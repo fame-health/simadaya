@@ -145,9 +145,9 @@
                         <x-heroicon-m-academic-cap style="position: absolute; right: 0.5rem; top: 0.5rem; width: 1.2rem; height: 1.2rem; opacity: 0.1;" />
                     </div>
                     <div class="card-stat card-rose">
-                        <span class="stat-label">Sesi Presensi</span>
+                        <span class="stat-label">Sesi Absensi</span>
                         <p class="stat-value" style="color: #be123c;">{{ $data['admin_active_sessions'] }}</p>
-                        <p class="stat-desc">Sesi presensi sistem aktif.</p>
+                        <p class="stat-desc">Sesi absensi sistem aktif.</p>
                         <x-heroicon-m-check-badge style="position: absolute; right: 0.5rem; top: 0.5rem; width: 1.2rem; height: 1.2rem; opacity: 0.1;" />
                     </div>
                 </div>

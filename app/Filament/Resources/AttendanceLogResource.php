@@ -34,13 +34,13 @@ class AttendanceLogResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
-    protected static ?string $label = 'Riwayat Presensi';
+    protected static ?string $label = 'Riwayat Absensi';
 
-    protected static ?string $pluralModelLabel = 'Riwayat Presensi';
+    protected static ?string $pluralModelLabel = 'Riwayat Absensi';
 
-    protected static ?string $navigationLabel = 'Riwayat Presensi';
+    protected static ?string $navigationLabel = 'Riwayat Absensi';
 
-    protected static ?string $navigationGroup = 'PRESENSI';
+    protected static ?string $navigationGroup = 'ABSENSI';
 
     protected static ?int $navigationSort = 2;
 
@@ -122,7 +122,7 @@ class AttendanceLogResource extends Resource
                     ->dateTime()
                     ->sortable(),
                 Tables\Columns\BadgeColumn::make('status')
-                    ->label('Status Presensi')
+                    ->label('Status Absensi')
                     ->colors([
                         'success' => 'present',
                         'warning' => 'permit',
@@ -261,7 +261,7 @@ class AttendanceLogResource extends Resource
     {
         return $infolist
             ->schema([
-                InfoSection::make('Detail Presensi')
+                InfoSection::make('Detail Absensi')
                     ->schema([
                         TextEntry::make('student.user.name')
                             ->label('Nama Peserta'),
@@ -269,7 +269,7 @@ class AttendanceLogResource extends Resource
                             ->label('Sesi Pertemuan')
                             ->placeholder('Input Manual'),
                         TextEntry::make('scan_time')
-                            ->label('Waktu Presensi')
+                            ->label('Waktu Absensi')
                             ->dateTime(),
                         TextEntry::make('status')
                             ->label('Status')

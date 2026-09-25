@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Riwayat Presensi Peserta Magang</title>
+    <title>Riwayat Absensi Peserta Magang</title>
 
     <style>
         body {
@@ -149,13 +149,13 @@
             </td>
             <td style="text-align: center;">
                 <h2 style="margin: 0; font-size: 15pt; color: #1b5e20;">SISTEM INFORMASI MAGANG (SIMADAYA)</h2>
-                <p style="margin: 3px 0 0 0; font-size: 10pt; color: #666666;">Laporan Resmi Riwayat Presensi Kehadiran Peserta Magang</p>
+                <p style="margin: 3px 0 0 0; font-size: 10pt; color: #666666;">Laporan Resmi Riwayat Absensi Kehadiran Peserta Magang</p>
             </td>
             <td style="width: 15%;"></td>
         </tr>
     </table>
 
-    <div class="title">LAPORAN RIWAYAT PRESENSI</div>
+    <div class="title">LAPORAN RIWAYAT ABSENSI</div>
 
     <!-- Info Peserta -->
     <table class="info-table">

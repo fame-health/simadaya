@@ -18,11 +18,11 @@ class AttendanceSessionResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
 
-    protected static ?string $navigationGroup = 'PRESENSI';
+    protected static ?string $navigationGroup = 'ABSENSI';
 
     protected static ?int $navigationSort = 1;
 
-    protected static ?string $label = 'Sesi Presensi';
+    protected static ?string $label = 'Sesi Absensi';
 
     public static function shouldRegisterNavigation(): bool
     {

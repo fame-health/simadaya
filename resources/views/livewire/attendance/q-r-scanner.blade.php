@@ -22,12 +22,12 @@
                         </svg>
                     </div>
 
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Presensi Berhasil!</h3>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Absensi Berhasil!</h3>
                     <p class="text-gray-500 dark:text-gray-400 text-sm mb-8">{{ $message }}</p>
 
                     <a href="{{ \App\Filament\Resources\AttendanceLogResource::getUrl('index') }}"
                        class="w-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-3 rounded-xl font-bold transition-transform active:scale-95 shadow-lg mb-3">
-                        Lihat Riwayat Presensi
+                        Lihat Riwayat Absensi
                     </a>
                 </div>
             @elseif($status === 'error')
@@ -39,7 +39,7 @@
                         </svg>
                     </div>
 
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Presensi Gagal</h3>
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Absensi Gagal</h3>
                     <p class="text-red-600 dark:text-red-400 text-sm mb-8 font-medium">{{ $message }}</p>
 
                     <button wire:click="resetScanner"

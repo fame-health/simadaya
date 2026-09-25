@@ -24,13 +24,13 @@ class RiwayatAbsensi extends Page implements HasTable
 
     protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
 
-    protected static ?string $navigationLabel = 'Riwayat Presensi';
+    protected static ?string $navigationLabel = 'Riwayat Absensi';
 
     protected static string $view = 'filament.pages.riwayat-absensi';
 
-    protected static ?string $title = 'Riwayat Presensi';
+    protected static ?string $title = 'Riwayat Absensi';
 
-    protected static ?string $navigationGroup = 'PRESENSI';
+    protected static ?string $navigationGroup = 'ABSENSI';
 
     protected static ?int $navigationSort = 3;
 

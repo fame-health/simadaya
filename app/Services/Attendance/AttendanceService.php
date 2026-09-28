@@ -324,6 +324,7 @@ class AttendanceService
             $sessionDate = $currentSession->session_date ? Carbon::parse($currentSession->session_date)->toDateString() : null;
 
             $eligibleStudentsQuery = Mahasiswa::query()
+                ->whereHas('user', fn ($uq) => $uq->where('is_active', true))
                 ->whereHas('pengajuan', function ($q) use ($currentSession, $sessionDate) {
                     $q->whereIn('status', [
                         \App\Models\PengajuanMagang::STATUS_DITERIMA,
@@ -372,6 +373,39 @@ class AttendanceService
                         ]);
                         $createdCount++;
                     }
+                }
+            }
+        }
+
+        // 2. Pemeriksaan otomatis harian setelah jam kantor (setiap hari kerja Senin-Jumat setelah pkl 17:00)
+        $today = now();
+        if (! $session && $today->isWeekday() && $today->hour >= 17) {
+            $todayDate = $today->toDateString();
+            $activeStudents = Mahasiswa::query()
+                ->whereHas('user', fn ($uq) => $uq->where('is_active', true))
+                ->whereHas('pengajuan', function ($q) use ($todayDate) {
+                    $q->whereIn('status', [
+                        \App\Models\PengajuanMagang::STATUS_DITERIMA,
+                        \App\Models\PengajuanMagang::STATUS_SELESAI,
+                    ])
+                    ->where('tanggal_mulai', '<=', $todayDate)
+                    ->where('tanggal_selesai', '>=', $todayDate);
+                })->get();
+
+            foreach ($activeStudents as $student) {
+                $hasLogToday = AttendanceLog::query()
+                    ->where('student_id', $student->id)
+                    ->whereDate('scan_time', $todayDate)
+                    ->exists();
+
+                if (! $hasLogToday) {
+                    AttendanceLog::create([
+                        'student_id' => $student->id,
+                        'scan_time' => $today->copy()->setTime(17, 0, 0),
+                        'status' => AttendanceLog::STATUS_ALPHA,
+                        'reason' => 'Tanpa Keterangan (Alpa Jam Kerja)',
+                    ]);
+                    $createdCount++;
                 }
             }
         }

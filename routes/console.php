@@ -25,3 +25,6 @@ Schedule::call(function () {
 // Verifikasi Laporan Akhir otomatis setiap minggu
 Schedule::command('app:auto-verify-laporan')->weekly();
 
+// Otomatis tandai ALPA untuk peserta magang yang tidak absen selama jam kantor (setiap hari kerja pukul 17:30)
+Schedule::command('app:generate-alpha-logs')->dailyAt('17:30');
+

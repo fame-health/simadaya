@@ -359,6 +359,8 @@ class AttendanceService
                                 AttendanceLog::STATUS_PRESENT,
                                 AttendanceLog::STATUS_PERMIT,
                                 AttendanceLog::STATUS_SICK,
+                                AttendanceLog::STATUS_PENDING_PERMIT,
+                                AttendanceLog::STATUS_PENDING_SICK,
                             ])
                             ->exists();
                     }

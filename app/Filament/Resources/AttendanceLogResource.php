@@ -124,20 +124,39 @@ class AttendanceLogResource extends Resource
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status Absensi')
                     ->colors([
-                        'success' => 'present',
-                        'warning' => 'permit',
-                        'danger' => ['sick', 'alpha', 'alpa'],
+                        'success' => AttendanceLog::STATUS_PRESENT,
+                        'warning' => [
+                            AttendanceLog::STATUS_PERMIT,
+                            AttendanceLog::STATUS_PENDING_PERMIT,
+                            AttendanceLog::STATUS_PENDING_SICK,
+                        ],
+                        'danger' => [
+                            AttendanceLog::STATUS_SICK,
+                            AttendanceLog::STATUS_ALPHA,
+                            AttendanceLog::STATUS_REJECTED,
+                            'alpa',
+                        ],
                     ])
                     ->icons([
-                        'heroicon-o-check-circle' => 'present',
-                        'heroicon-o-document-text' => 'permit',
-                        'heroicon-o-exclamation-circle' => 'sick',
-                        'heroicon-o-x-circle' => ['alpha', 'alpa'],
+                        'heroicon-o-check-circle' => AttendanceLog::STATUS_PRESENT,
+                        'heroicon-o-clock' => [
+                            AttendanceLog::STATUS_PENDING_PERMIT,
+                            AttendanceLog::STATUS_PENDING_SICK,
+                        ],
+                        'heroicon-o-document-text' => AttendanceLog::STATUS_PERMIT,
+                        'heroicon-o-exclamation-circle' => AttendanceLog::STATUS_SICK,
+                        'heroicon-o-x-circle' => [
+                            AttendanceLog::STATUS_ALPHA,
+                            AttendanceLog::STATUS_REJECTED,
+                            'alpa',
+                        ],
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'present' => 'HADIR',
-                        'permit' => 'IZIN',
-                        'sick' => 'SAKIT',
+                        AttendanceLog::STATUS_PRESENT => 'HADIR',
+                        AttendanceLog::STATUS_PERMIT => 'IZIN (DISETUJUI)',
+                        AttendanceLog::STATUS_SICK => 'SAKIT (DISETUJUI)',
+                        AttendanceLog::STATUS_PENDING_PERMIT, AttendanceLog::STATUS_PENDING_SICK => 'MENUNGGU PERSETUJUAN',
+                        AttendanceLog::STATUS_REJECTED => 'DITOLAK',
                         'alpha', 'alpa' => 'ALPA',
                         default => strtoupper($state),
                     }),
@@ -179,14 +198,22 @@ class AttendanceLogResource extends Resource
                     ])
                     ->action(function (array $data) {
                         $student = Auth::user()->mahasiswa;
+                        $initialStatus = $data['status'] === 'permit'
+                            ? AttendanceLog::STATUS_PENDING_PERMIT
+                            : AttendanceLog::STATUS_PENDING_SICK;
 
                         AttendanceLog::create([
                             'student_id' => $student->id,
-                            'status' => $data['status'],
+                            'status' => $initialStatus,
                             'scan_time' => $data['scan_time'],
                             'reason' => $data['reason'],
                             'document_path' => $data['document_path'],
                         ]);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Pengajuan berhasil dikirim dan menunggu persetujuan Pembimbing/Admin')
+                            ->info()
+                            ->send();
                     }),
                 Action::make('downloadPdf')
                     ->label('Unduh PDF')
@@ -235,12 +262,58 @@ class AttendanceLogResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'present' => 'Hadir',
-                        'permit' => 'Izin',
-                        'sick' => 'Sakit',
+                        'permit' => 'Izin Disetujui',
+                        'sick' => 'Sakit Disetujui',
+                        'pending_permit' => 'Izin Menunggu Persetujuan',
+                        'pending_sick' => 'Sakit Menunggu Persetujuan',
                         'alpha' => 'Alpa',
+                        'rejected' => 'Ditolak',
                     ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('approve_permit')
+                    ->label('Setujui')
+                    ->icon('heroicon-m-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Setujui Pengajuan Izin/Sakit')
+                    ->modalDescription('Apakah Anda yakin ingin menyetujui pengajuan ketidakhadiran ini?')
+                    ->hidden(fn ($record) => !in_array($record->status, [AttendanceLog::STATUS_PENDING_PERMIT, AttendanceLog::STATUS_PENDING_SICK]) || Auth::user()->isMahasiswa())
+                    ->action(function ($record) {
+                        $newStatus = $record->status === AttendanceLog::STATUS_PENDING_PERMIT
+                            ? AttendanceLog::STATUS_PERMIT
+                            : AttendanceLog::STATUS_SICK;
+
+                        $record->update(['status' => $newStatus]);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Pengajuan izin/sakit berhasil disetujui')
+                            ->success()
+                            ->send();
+                    }),
+                Tables\Actions\Action::make('reject_permit')
+                    ->label('Tolak')
+                    ->icon('heroicon-m-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Tolak Pengajuan Izin/Sakit')
+                    ->form([
+                        Textarea::make('rejection_reason')
+                            ->label('Alasan Penolakan')
+                            ->required(),
+                    ])
+                    ->hidden(fn ($record) => !in_array($record->status, [AttendanceLog::STATUS_PENDING_PERMIT, AttendanceLog::STATUS_PENDING_SICK]) || Auth::user()->isMahasiswa())
+                    ->action(function ($record, array $data) {
+                        $record->update([
+                            'status' => AttendanceLog::STATUS_REJECTED,
+                            'reason' => 'Ditolak: ' . $data['rejection_reason'],
+                        ]);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Pengajuan izin/sakit ditolak')
+                            ->danger()
+                            ->send();
+                    }),
                 Tables\Actions\Action::make('view_file')
                     ->label('Buka Surat')
                     ->icon('heroicon-m-document-magnifying-glass')

@@ -14,6 +14,9 @@ class AttendanceLog extends Model
     const STATUS_PERMIT = 'permit';
     const STATUS_SICK = 'sick';
     const STATUS_ALPHA = 'alpha';
+    const STATUS_PENDING_PERMIT = 'pending_permit';
+    const STATUS_PENDING_SICK = 'pending_sick';
+    const STATUS_REJECTED = 'rejected';
 
     protected $fillable = [
         'session_id',

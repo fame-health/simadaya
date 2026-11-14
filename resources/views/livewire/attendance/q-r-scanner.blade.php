@@ -124,6 +124,17 @@
 
     </div>
 
+    <script>
+        setTimeout(() => {
+            const feedback = document.getElementById('camera-feedback');
+            if (feedback?.textContent.trim() !== 'Mengaktifkan kamera...') return;
+
+            feedback.textContent = 'Pemindai belum dijalankan oleh Livewire. Muat ulang halaman; jika tetap muncul, pastikan versi terbaru sudah diunggah dan cache view hosting dibersihkan.';
+            const retryButton = document.getElementById('camera-retry');
+            if (retryButton) retryButton.hidden = false;
+        }, 8000);
+    </script>
+
 @assets
     <script src="https://unpkg.com/html5-qrcode@2.3.8"></script>
 @endassets
@@ -132,18 +143,45 @@
     <script>
         let attendanceQrScanner = null;
         let attendanceQrSubmitting = false;
+        let attendanceQrStartTimer = null;
+        let attendanceQrPermissionTimer = null;
+        let attendanceQrStartAttempts = 0;
+
+        function attendanceCameraElement(id) {
+            return $wire.$el?.querySelector(`#${id}`) ?? document.getElementById(id);
+        }
 
         function setAttendanceCameraFeedback(message, allowRetry = false) {
-            const feedback = document.getElementById('camera-feedback');
-            const retryButton = document.getElementById('camera-retry');
+            const feedback = attendanceCameraElement('camera-feedback');
+            const retryButton = attendanceCameraElement('camera-retry');
 
             if (feedback) feedback.textContent = message;
             if (retryButton) retryButton.hidden = !allowRetry;
         }
 
         function startAttendanceScanner() {
-            const reader = document.getElementById('reader');
-            if (!reader || attendanceQrScanner) return;
+            if (attendanceQrScanner) return;
+
+            const reader = attendanceCameraElement('reader');
+            if (!reader) {
+                if (attendanceQrStartAttempts >= 20) {
+                    setAttendanceCameraFeedback('Area kamera tidak ditemukan. Muat ulang halaman; jika tetap muncul, unggah versi terbaru aplikasi ke hosting.', true);
+                    return;
+                }
+
+                attendanceQrStartAttempts++;
+                setAttendanceCameraFeedback('Menyiapkan area kamera...');
+                if (!attendanceQrStartTimer) {
+                    attendanceQrStartTimer = setTimeout(() => {
+                        attendanceQrStartTimer = null;
+                        startAttendanceScanner();
+                    }, 150);
+                }
+
+                return;
+            }
+
+            attendanceQrStartAttempts = 0;
 
             if (!window.isSecureContext) {
                 setAttendanceCameraFeedback('Kamera perlu dibuka melalui HTTPS. Aktifkan SSL pada domain hosting lalu muat ulang halaman.', true);
@@ -163,6 +201,11 @@
             const scanner = new Html5Qrcode('reader');
             attendanceQrScanner = scanner;
             setAttendanceCameraFeedback('Meminta izin kamera...');
+            attendanceQrPermissionTimer = setTimeout(() => {
+                if (attendanceQrScanner === scanner) {
+                    setAttendanceCameraFeedback('Permintaan kamera belum dijawab. Periksa apakah dialog izin kamera muncul di browser.', true);
+                }
+            }, 12000);
 
             scanner.start(
                 { facingMode: 'environment' },
@@ -180,8 +223,12 @@
                     });
                 }
             ).then(() => {
+                clearTimeout(attendanceQrPermissionTimer);
+                attendanceQrPermissionTimer = null;
                 setAttendanceCameraFeedback('Kamera aktif. Arahkan kamera ke QR Code.');
             }).catch((error) => {
+                clearTimeout(attendanceQrPermissionTimer);
+                attendanceQrPermissionTimer = null;
                 console.error('Camera error:', error);
                 if (attendanceQrScanner === scanner) attendanceQrScanner = null;
 
@@ -205,12 +252,15 @@
         $wire.on('scanner-start', () => setTimeout(startAttendanceScanner, 150));
         $wire.on('scanner-reset', () => setTimeout(startAttendanceScanner, 150));
 
-        document.getElementById('camera-retry')?.addEventListener('click', () => {
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('#camera-retry')) return;
+
             if (attendanceQrScanner) {
-                attendanceQrScanner.stop().catch(() => {}).finally(() => {
-                    attendanceQrScanner = null;
-                    startAttendanceScanner();
-                });
+                const scanner = attendanceQrScanner;
+                attendanceQrScanner = null;
+                clearTimeout(attendanceQrPermissionTimer);
+                attendanceQrPermissionTimer = null;
+                scanner.stop().catch(() => {}).finally(startAttendanceScanner);
                 return;
             }
 

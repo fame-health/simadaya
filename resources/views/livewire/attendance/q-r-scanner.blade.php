@@ -122,7 +122,13 @@
         video { border-radius: 12px !important; }
     </style>
 
+    </div>
+
+@assets
     <script src="https://unpkg.com/html5-qrcode@2.3.8"></script>
+@endassets
+
+@script
     <script>
         let attendanceQrScanner = null;
         let attendanceQrSubmitting = false;
@@ -168,7 +174,7 @@
 
                     scanner.stop().catch(() => {}).finally(() => {
                         if (attendanceQrScanner === scanner) attendanceQrScanner = null;
-                        @this.call('processResult', decodedText).finally(() => {
+                        $wire.call('processResult', decodedText).finally(() => {
                             attendanceQrSubmitting = false;
                         });
                     });
@@ -192,14 +198,12 @@
             });
         }
 
-        document.addEventListener('livewire:initialized', () => {
-            @if ($isScanning)
-                startAttendanceScanner();
-            @endif
+        @if ($isScanning)
+            startAttendanceScanner();
+        @endif
 
-            @this.on('scanner-start', () => setTimeout(startAttendanceScanner, 150));
-            @this.on('scanner-reset', () => setTimeout(startAttendanceScanner, 150));
-        });
+        $wire.on('scanner-start', () => setTimeout(startAttendanceScanner, 150));
+        $wire.on('scanner-reset', () => setTimeout(startAttendanceScanner, 150));
 
         document.getElementById('camera-retry')?.addEventListener('click', () => {
             if (attendanceQrScanner) {
@@ -213,4 +217,4 @@
             startAttendanceScanner();
         });
     </script>
-</div>
+@endscript

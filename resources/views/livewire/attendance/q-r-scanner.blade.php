@@ -93,6 +93,13 @@
                     </div>
                     <div class="absolute top-0 left-0 w-full h-1 bg-primary-500/50 blur-[2px] z-30 animate-scan-line"></div>
                 </div>
+                <p id="camera-feedback" role="status" aria-live="polite" class="mt-3 text-center text-sm text-gray-600 dark:text-gray-300">
+                    Mengaktifkan kamera...
+                </p>
+                <button id="camera-retry" type="button" hidden
+                    class="mt-3 w-full rounded-xl bg-primary-600 px-4 py-3 font-bold text-white hover:bg-primary-700">
+                    Coba aktifkan kamera lagi
+                </button>
             @endif
         </div>
     </div>
@@ -115,17 +122,41 @@
         video { border-radius: 12px !important; }
     </style>
 
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8"></script>
     <script>
         let attendanceQrScanner = null;
         let attendanceQrSubmitting = false;
 
+        function setAttendanceCameraFeedback(message, allowRetry = false) {
+            const feedback = document.getElementById('camera-feedback');
+            const retryButton = document.getElementById('camera-retry');
+
+            if (feedback) feedback.textContent = message;
+            if (retryButton) retryButton.hidden = !allowRetry;
+        }
+
         function startAttendanceScanner() {
             const reader = document.getElementById('reader');
-            if (!reader || attendanceQrScanner || typeof Html5Qrcode === 'undefined') return;
+            if (!reader || attendanceQrScanner) return;
+
+            if (!window.isSecureContext) {
+                setAttendanceCameraFeedback('Kamera perlu dibuka melalui HTTPS. Aktifkan SSL pada domain hosting lalu muat ulang halaman.', true);
+                return;
+            }
+
+            if (!navigator.mediaDevices?.getUserMedia) {
+                setAttendanceCameraFeedback('Browser ini tidak mendukung akses kamera. Coba buka halaman dengan Chrome atau browser terbaru.', true);
+                return;
+            }
+
+            if (typeof Html5Qrcode === 'undefined') {
+                setAttendanceCameraFeedback('Library pemindai QR gagal dimuat. Periksa koneksi internet lalu coba lagi.', true);
+                return;
+            }
 
             const scanner = new Html5Qrcode('reader');
             attendanceQrScanner = scanner;
+            setAttendanceCameraFeedback('Meminta izin kamera...');
 
             scanner.start(
                 { facingMode: 'environment' },
@@ -133,6 +164,7 @@
                 (decodedText) => {
                     if (attendanceQrSubmitting) return;
                     attendanceQrSubmitting = true;
+                    setAttendanceCameraFeedback('QR terbaca. Sedang memproses absensi...');
 
                     scanner.stop().catch(() => {}).finally(() => {
                         if (attendanceQrScanner === scanner) attendanceQrScanner = null;
@@ -141,9 +173,22 @@
                         });
                     });
                 }
-            ).catch((error) => {
+            ).then(() => {
+                setAttendanceCameraFeedback('Kamera aktif. Arahkan kamera ke QR Code.');
+            }).catch((error) => {
                 console.error('Camera error:', error);
                 if (attendanceQrScanner === scanner) attendanceQrScanner = null;
+
+                const messages = {
+                    NotAllowedError: 'Izin kamera ditolak. Izinkan kamera untuk situs ini dari ikon pengaturan di samping alamat browser, lalu coba lagi.',
+                    PermissionDeniedError: 'Izin kamera ditolak. Izinkan kamera untuk situs ini dari pengaturan browser, lalu coba lagi.',
+                    NotFoundError: 'Kamera tidak ditemukan pada perangkat ini.',
+                    NotReadableError: 'Kamera sedang dipakai aplikasi lain. Tutup aplikasi tersebut lalu coba lagi.',
+                    OverconstrainedError: 'Kamera belakang tidak tersedia. Coba gunakan perangkat atau browser lain.',
+                    SecurityError: 'Browser memblokir kamera. Pastikan situs menggunakan HTTPS.'
+                };
+
+                setAttendanceCameraFeedback(messages[error?.name] ?? 'Kamera gagal dibuka. Pastikan izin kamera aktif dan kamera tidak dipakai aplikasi lain.', true);
             });
         }
 
@@ -154,6 +199,18 @@
 
             @this.on('scanner-start', () => setTimeout(startAttendanceScanner, 150));
             @this.on('scanner-reset', () => setTimeout(startAttendanceScanner, 150));
+        });
+
+        document.getElementById('camera-retry')?.addEventListener('click', () => {
+            if (attendanceQrScanner) {
+                attendanceQrScanner.stop().catch(() => {}).finally(() => {
+                    attendanceQrScanner = null;
+                    startAttendanceScanner();
+                });
+                return;
+            }
+
+            startAttendanceScanner();
         });
     </script>
 </div>

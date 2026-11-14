@@ -23,6 +23,7 @@ class AttendanceLog extends Model
         'student_id',
         'token',
         'scan_time',
+        'check_out_time',
         'browser',
         'ip_address',
         'device_hash',
@@ -34,6 +35,7 @@ class AttendanceLog extends Model
 
     protected $casts = [
         'scan_time' => 'datetime',
+        'check_out_time' => 'datetime',
     ];
 
     public function session(): BelongsTo

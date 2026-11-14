@@ -61,10 +61,12 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     protected $hidden = [
         'password',
         'remember_token',
+        'email_verification_code',
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'email_verification_code_expires_at' => 'datetime',
         'is_active' => 'boolean',
     ];
 

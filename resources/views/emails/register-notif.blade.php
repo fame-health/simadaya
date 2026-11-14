@@ -11,6 +11,6 @@ Terima kasih telah melakukan pendaftaran.
 Kunjungi Website
 @endcomponent
 
-Salam Hangat,
-{{ config('app.name') }}
+Salam hangat,
+SIMADAYA
 @endcomponent

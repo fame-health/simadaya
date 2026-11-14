@@ -118,8 +118,13 @@ class AttendanceLogResource extends Resource
                     ->sortable()
                     ->placeholder('Izin / Sakit / Alpa'),
                 Tables\Columns\TextColumn::make('scan_time')
-                    ->label('Waktu')
+                    ->label('Waktu Masuk')
                     ->dateTime()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('check_out_time')
+                    ->label('Waktu Pulang')
+                    ->dateTime()
+                    ->placeholder('Belum absen pulang')
                     ->sortable(),
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status Absensi')
@@ -342,8 +347,12 @@ class AttendanceLogResource extends Resource
                             ->label('Sesi Pertemuan')
                             ->placeholder('Input Manual'),
                         TextEntry::make('scan_time')
-                            ->label('Waktu Absensi')
+                            ->label('Waktu Masuk')
                             ->dateTime(),
+                        TextEntry::make('check_out_time')
+                            ->label('Waktu Pulang')
+                            ->dateTime()
+                            ->placeholder('Belum absen pulang'),
                         TextEntry::make('status')
                             ->label('Status')
                             ->badge()

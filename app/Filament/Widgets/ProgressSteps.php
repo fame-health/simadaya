@@ -283,11 +283,17 @@ class ProgressSteps extends Widget
             return 'Belum Absen';
         }
 
-        $hasAttended = AttendanceLog::where('student_id', $user->mahasiswa->id)
+        $attendance = AttendanceLog::where('student_id', $user->mahasiswa->id)
             ->whereDate('scan_time', Carbon::today())
-            ->exists();
+            ->where('status', AttendanceLog::STATUS_PRESENT)
+            ->latest('scan_time')
+            ->first();
 
-        return $hasAttended ? 'Sudah Absen' : 'Belum Absen';
+        if (! $attendance) {
+            return 'Belum Absen Masuk';
+        }
+
+        return $attendance->check_out_time ? 'Absensi Selesai' : 'Sudah Absen Masuk, Belum Pulang';
     }
 
     private function finalizeSteps(array $steps): array

@@ -216,17 +216,21 @@
         <thead>
             <tr>
                 <th style="width: 5%; text-align: center;">No</th>
-                <th style="width: 25%;">Waktu / Tanggal</th>
-                <th style="width: 25%;">Sesi / Keterangan</th>
-                <th style="width: 15%; text-align: center;">Status</th>
-                <th style="width: 30%;">Alasan / Catatan</th>
+                <th style="width: 15%;">Tanggal</th>
+                <th style="width: 12%;">Jam Masuk</th>
+                <th style="width: 12%;">Jam Pulang</th>
+                <th style="width: 20%;">Sesi / Keterangan</th>
+                <th style="width: 12%; text-align: center;">Status</th>
+                <th style="width: 24%;">Alasan / Catatan</th>
             </tr>
         </thead>
         <tbody>
             @forelse($logs as $index => $log)
                 <tr>
                     <td style="text-align: center;">{{ $index + 1 }}</td>
-                    <td>{{ $log->scan_time ? $log->scan_time->translatedFormat('d F Y, H:i') : '-' }}</td>
+                    <td>{{ $log->scan_time ? $log->scan_time->translatedFormat('d F Y') : '-' }}</td>
+                    <td>{{ $log->status === 'present' && $log->scan_time ? $log->scan_time->format('H:i') : '-' }}</td>
+                    <td>{{ $log->check_out_time ? $log->check_out_time->format('H:i') : '-' }}</td>
                     <td>{{ $log->session?->session_name ?? 'Pengajuan Manual' }}</td>
                     <td style="text-align: center;">
                         @if($log->status === 'present')
@@ -243,7 +247,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="text-align: center; color: #888888; padding: 15px;">
+                    <td colspan="7" style="text-align: center; color: #888888; padding: 15px;">
                         Belum ada riwayat absensi terdaftar untuk periode ini.
                     </td>
                 </tr>

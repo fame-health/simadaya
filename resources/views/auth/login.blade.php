@@ -95,9 +95,9 @@
 
                 {{-- Session Status --}}
                 @if (session('status'))
-                    <div class="mb-6 p-4 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-medium border border-emerald-100 flex items-center gap-2">
-                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
-                        {{ session('status') }}
+                    <div class="mb-6 p-4 rounded-xl {{ session('status') === 'session-expired' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100' }} text-sm font-medium border flex items-center gap-2">
+                        <i data-lucide="{{ session('status') === 'session-expired' ? 'clock-3' : 'check-circle-2' }}" class="w-4 h-4 shrink-0 {{ session('status') === 'session-expired' ? 'text-amber-500' : 'text-emerald-500' }}"></i>
+                        {{ session('status') === 'session-expired' ? 'Sesi Anda kedaluwarsa. Silakan masuk kembali untuk melanjutkan verifikasi email.' : session('status') }}
                     </div>
                 @endif
 

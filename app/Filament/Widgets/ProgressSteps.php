@@ -50,8 +50,8 @@ class ProgressSteps extends Widget
                 'color'        => 'gray',
             ],
             [
-                'title'        => 'Logbook Mingguan',
-                'description'  => 'Isi laporan kegiatan mingguan Anda.',
+                'title'        => 'Logbook Harian',
+                'description'  => 'Catat kegiatan Anda setiap hari kerja.',
                 'completed'    => false,
                 'active'       => false,
                 'url'          => route('filament.dashboard.resources.weekly-logbooks.index'),
@@ -194,26 +194,33 @@ class ProgressSteps extends Widget
         }
 
         // -----------------------------------------------------------
-        // STEP 3: LOGBOOK MINGGUAN
+        // STEP 3: LOGBOOK HARIAN
         // -----------------------------------------------------------
         $startDate = \Carbon\Carbon::parse($pengajuan->tanggal_mulai);
         $endDate = \Carbon\Carbon::parse($pengajuan->tanggal_selesai);
-        $totalWeeks = max(1, (int)ceil($startDate->diffInDays($endDate) / 7));
+        $totalWorkdays = 0;
+        for ($date = $startDate->copy()->startOfDay(); $date->lte($endDate); $date->addDay()) {
+            if ($date->isWeekday()) {
+                $totalWorkdays++;
+            }
+        }
+        $totalWorkdays = max(1, $totalWorkdays);
 
         $approvedLogbooksCount = \App\Models\WeeklyLogbook::where('mahasiswa_id', $mahasiswa->id)
             ->where('status', 'approved')
-            ->count();
+            ->distinct()
+            ->count('start_date');
 
-        $steps[2]['keterangan'] = "Wajib mengisi {$totalWeeks} logbook (Disetujui: {$approvedLogbooksCount}/{$totalWeeks}).";
+        $steps[2]['keterangan'] = "Wajib mengisi {$totalWorkdays} logbook hari kerja (Disetujui: {$approvedLogbooksCount}/{$totalWorkdays}).";
 
-        if ($approvedLogbooksCount >= $totalWeeks) {
+        if ($approvedLogbooksCount >= $totalWorkdays) {
             $steps[2]['completed'] = true;
             $steps[2]['color'] = 'success';
             $steps[2]['status'] = 'Lengkap';
         } else {
             $steps[2]['active'] = true;
             $steps[2]['color'] = 'warning';
-            $steps[2]['status'] = "Progres: {$approvedLogbooksCount}/{$totalWeeks}";
+            $steps[2]['status'] = "Progres: {$approvedLogbooksCount}/{$totalWorkdays}";
             return $this->finalizeSteps($steps);
         }
 

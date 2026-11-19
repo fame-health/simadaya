@@ -18,11 +18,7 @@
         </div>
     </div>
 
-    <div class="mt-8 grid grid-cols-2 gap-4 w-full text-sm">
-        <div class="p-3 bg-gray-50 rounded border border-gray-100">
-            <span class="block text-gray-400">Lokasi</span>
-            <span class="font-semibold">{{ $session->location->name }}</span>
-        </div>
+    <div class="mt-8 w-full text-sm">
         <div class="p-3 bg-gray-50 rounded border border-gray-100">
             <span class="block text-gray-400">Sesi</span>
             <span class="font-semibold">{{ $session->session_date->format('d M Y') }}</span>

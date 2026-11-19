@@ -1,11 +1,6 @@
 <div class="w-full max-w-md mx-auto py-4">
-    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-        <div class="bg-primary-600 px-6 py-4 flex items-center justify-between">
-            <h2 class="text-white font-bold text-lg">Absensi Magang</h2>
-            <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,1)]"></div>
-        </div>
-
-        <div class="p-6">
+    <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <div class="p-4 sm:p-5">
             @if ($status === 'scanning')
                 <div class="flex flex-col items-center justify-center py-12">
                     <div class="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -75,19 +70,22 @@
                     </button>
                 </div>
             @elseif ($isScanning)
-                <div class="mb-6 text-center">
-                    <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">
-                        Arahkan kamera ke QR Code yang ditampilkan pembimbing untuk mencatat absensi {{ $hasCheckedInToday ? 'kepulangan' : 'kehadiran' }}.
+                <div class="mb-4 text-center">
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        Scan QR {{ $hasCheckedInToday ? 'Kepulangan' : 'Kehadiran' }}
+                    </h2>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        Arahkan kamera ke QR yang ditampilkan pembimbing.
                     </p>
                     <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                        Saat pertama kali, pilih <strong>Izinkan</strong> di Chrome dan atur izin kamera situs ke <strong>Izinkan</strong> agar kamera langsung aktif saat scan berikutnya.
+                        Izinkan kamera saat diminta. Chrome akan mengingat izin jika setelan situs diatur ke <strong>Izinkan</strong>.
                     </p>
                 </div>
 
-                <div class="relative w-full aspect-square bg-black rounded-xl overflow-hidden border-2 border-gray-100 dark:border-gray-700 shadow-inner">
+                <div class="relative mx-auto aspect-square w-full max-w-sm overflow-hidden rounded-xl bg-black ring-1 ring-gray-200 dark:ring-gray-700">
                     <div id="reader" class="w-full h-full"></div>
                     <div class="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
-                        <div class="w-64 h-64 border-2 border-primary-500/50 rounded-lg relative">
+                        <div class="h-56 w-56 rounded-lg border-2 border-primary-500/60 relative sm:h-64 sm:w-64">
                             <div class="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-primary-500"></div>
                             <div class="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-primary-500"></div>
                             <div class="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-primary-500"></div>
@@ -96,22 +94,21 @@
                     </div>
                     <div class="absolute top-0 left-0 w-full h-1 bg-primary-500/50 blur-[2px] z-30 animate-scan-line"></div>
                 </div>
-                <p id="camera-feedback" role="status" aria-live="polite" class="mt-3 text-center text-sm text-gray-600 dark:text-gray-300">
+                <p id="camera-feedback" role="status" aria-live="polite" class="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-center text-sm text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                     Mengaktifkan kamera...
                 </p>
                 <button id="camera-retry" type="button" hidden
-                    class="mt-3 w-full rounded-xl bg-primary-600 px-4 py-3 font-bold text-white hover:bg-primary-700">
-                    Coba aktifkan kamera lagi
+                    class="mt-3 w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700">
+                    Coba nyalakan kamera lagi
                 </button>
             @endif
         </div>
     </div>
 
-    <div class="mt-6 text-center flex flex-col gap-2">
-        <a href="{{ \App\Filament\Resources\AttendanceLogResource::getUrl('index') }}" class="text-xs font-bold text-primary-600 hover:text-primary-500 underline decoration-dotted">
-            Tidak bisa hadir? Klik di sini untuk ajukan izin/sakit
+    <div class="mt-4 text-center">
+        <a href="{{ \App\Filament\Resources\AttendanceLogResource::getUrl('index') }}" class="text-sm font-medium text-primary-600 hover:text-primary-500 underline underline-offset-2">
+            Ajukan izin atau sakit
         </a>
-        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">SIMADAYA APP v2.1</span>
     </div>
 
     <style>

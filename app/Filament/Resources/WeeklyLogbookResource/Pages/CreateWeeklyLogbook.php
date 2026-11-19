@@ -17,6 +17,10 @@ class CreateWeeklyLogbook extends CreateRecord
             $data['mahasiswa_id'] = auth()->user()->mahasiswa?->id;
         }
 
+        // Keep the legacy weekly columns populated while each new entry represents one day.
+        $data['end_date'] = $data['start_date'];
+        $data['week_number'] = 1;
+
         return $data;
     }
 }

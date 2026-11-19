@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rules\Unique;
 
 class WeeklyLogbookResource extends Resource
 {
@@ -26,7 +27,9 @@ class WeeklyLogbookResource extends Resource
         return 3;
     }
 
-    protected static ?string $label = 'Logbook Mingguan';
+    protected static ?string $label = 'Logbook Harian';
+
+    protected static ?string $pluralLabel = 'Logbook Harian';
 
     public static function canCreate(): bool
     {
@@ -72,6 +75,7 @@ class WeeklyLogbookResource extends Resource
         $isMahasiswa = $user->role === 'mahasiswa';
         $isPembimbing = $user->role === 'pembimbing';
         $isView = $form->getOperation() === 'view';
+        $mahasiswaId = $form->getRecord()?->mahasiswa_id ?? $user->mahasiswa?->id;
 
         return $form
             ->schema([
@@ -80,25 +84,25 @@ class WeeklyLogbookResource extends Resource
                         // KOLOM KIRI (UTAMA) - 2/3 Lebar
                         Forms\Components\Group::make()
                             ->schema([
-                                Forms\Components\Section::make('📋 Detail Kegiatan Mingguan')
-                                    ->description('Isi laporan kegiatan Anda selama satu minggu ini.')
+                                Forms\Components\Section::make('Detail Kegiatan Harian')
+                                    ->description('Catat kegiatan dan hasil pekerjaan Anda untuk satu hari.')
                                     ->schema([
                                         Forms\Components\RichEditor::make('activities')
-                                            ->label('Ringkasan Kegiatan')
-                                            ->placeholder('Apa saja yang Anda lakukan minggu ini?')
+                                            ->label('Kegiatan Hari Ini')
+                                            ->placeholder('Tuliskan pekerjaan yang Anda lakukan hari ini.')
                                             ->required()
                                             ->disabled($isPembimbing || $isView)
                                             ->columnSpanFull(),
 
                                         Forms\Components\RichEditor::make('achievements')
-                                            ->label('Hasil yang Dicapai')
-                                            ->placeholder('Target atau output apa yang berhasil diselesaikan?')
+                                            ->label('Hasil Pekerjaan')
+                                            ->placeholder('Tuliskan hasil atau target yang berhasil dicapai hari ini.')
                                             ->disabled($isPembimbing || $isView)
                                             ->columnSpanFull(),
 
                                         Forms\Components\RichEditor::make('problems')
-                                            ->label('Kendala & Solusi')
-                                            ->placeholder('Hambatan apa yang dihadapi dan bagaimana mengatasinya?')
+                                            ->label('Kendala dan Solusi')
+                                            ->placeholder('Tuliskan kendala yang ditemui dan cara mengatasinya.')
                                             ->disabled($isPembimbing || $isView)
                                             ->columnSpanFull(),
                                     ])->compact(),
@@ -130,7 +134,7 @@ class WeeklyLogbookResource extends Resource
                         // KOLOM KANAN (SIDEBAR) - 1/3 Lebar
                         Forms\Components\Group::make()
                             ->schema([
-                                Forms\Components\Section::make('ℹ️ Informasi Laporan')
+                                Forms\Components\Section::make('Informasi Logbook')
                                     ->schema([
                                         Forms\Components\Select::make('mahasiswa_id')
                                             ->relationship('mahasiswa', 'nim')
@@ -138,35 +142,22 @@ class WeeklyLogbookResource extends Resource
                                             ->required()
                                             ->hidden($isMahasiswa),
 
-                                        Forms\Components\TextInput::make('week_number')
-                                            ->label('Minggu Ke-')
-                                            ->prefix('Ke-')
-                                            ->required()
-                                            ->numeric()
-                                            ->disabled($isPembimbing || $isView),
-
                                         Forms\Components\DatePicker::make('start_date')
-                                            ->label('Mulai')
+                                            ->label('Tanggal Kegiatan')
                                             ->required()
                                             ->native(false)
+                                            ->maxDate(now())
                                             ->disabled($isPembimbing || $isView)
                                             ->default(now())
-                                            ->reactive()
-                                            ->afterStateUpdated(function ($state, callable $set) {
-                                                if ($state) {
-                                                    $date = \Illuminate\Support\Carbon::parse($state);
-                                                    $set('end_date', $date->addDays(6)->format('Y-m-d'));
-                                                }
-                                            }),
-
-                                        Forms\Components\DatePicker::make('end_date')
-                                            ->label('Selesai')
-                                            ->required()
-                                            ->native(false)
-                                            ->disabled($isPembimbing || $isView)
-                                            ->default(fn ($get) => $get('start_date')
-                                                ? \Illuminate\Support\Carbon::parse($get('start_date'))->addDays(6)->format('Y-m-d')
-                                                : now()->addDays(6)->format('Y-m-d')),
+                                            ->unique(
+                                                ignoreRecord: true,
+                                                modifyRuleUsing: fn (Unique $rule) => $mahasiswaId
+                                                    ? $rule->where('mahasiswa_id', $mahasiswaId)
+                                                    : $rule,
+                                            )
+                                            ->validationMessages([
+                                                'unique' => 'Logbook untuk tanggal ini sudah dibuat.',
+                                            ]),
                                     ])->compact(),
 
                                 Forms\Components\Section::make('📎 Lampiran')
@@ -200,21 +191,14 @@ class WeeklyLogbookResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('start_date', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('mahasiswa.user.name')
                     ->label('Mahasiswa')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('week_number')
-                    ->label('Minggu')
-                    ->sortable()
-                    ->alignCenter(),
                 Tables\Columns\TextColumn::make('start_date')
-                    ->label('Mulai')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('end_date')
-                    ->label('Selesai')
+                    ->label('Tanggal')
                     ->date()
                     ->sortable(),
                 Tables\Columns\BadgeColumn::make('status')

@@ -79,6 +79,9 @@
                     <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">
                         Arahkan kamera ke QR Code yang ditampilkan pembimbing untuk mencatat absensi {{ $hasCheckedInToday ? 'kepulangan' : 'kehadiran' }}.
                     </p>
+                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        Saat pertama kali, pilih <strong>Izinkan</strong> di Chrome dan atur izin kamera situs ke <strong>Izinkan</strong> agar kamera langsung aktif saat scan berikutnya.
+                    </p>
                 </div>
 
                 <div class="relative w-full aspect-square bg-black rounded-xl overflow-hidden border-2 border-gray-100 dark:border-gray-700 shadow-inner">

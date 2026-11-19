@@ -59,8 +59,6 @@ class AttendanceSessionResource extends Resource
                 Tables\Columns\TextColumn::make('session_name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('location.name')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('session_date')
                     ->date()
                     ->sortable(),

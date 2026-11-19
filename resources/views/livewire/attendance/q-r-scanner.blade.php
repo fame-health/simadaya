@@ -248,9 +248,9 @@
             });
         }
 
-        @if ($isScanning)
-            startAttendanceScanner();
-        @endif
+        // Start from the rendered scanner element instead of a Blade-time condition.
+        // This also covers first-load timing differences in nested Filament/Livewire views.
+        requestAnimationFrame(() => setTimeout(startAttendanceScanner, 150));
 
         $wire.on('scanner-start', () => setTimeout(startAttendanceScanner, 150));
         $wire.on('scanner-reset', () => setTimeout(startAttendanceScanner, 150));
